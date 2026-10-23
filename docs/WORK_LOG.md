@@ -199,3 +199,10 @@ La geometría dimensional educativa está integrada; el kernel de referencias es
 - El cono anterior avisa en la línea 4 con T0101 (no con T0202 ni con T0); el arco anterior avisa en la línea 5 con T0202. Todas las prácticas actuales quedan sin aviso. `first-program.nc` con T0101 como setup avisa en `U-4 W-10` (chaflán que baja hacia el plato); con su setup T0 no.
 - Sin cambios en la UI ni en el contrato TS: el esquema ya admitía avisos y el editor los muestra en ámbar.
 - Checks: fmt/Clippy; 182 Rust; 164 TS; 29 WASM; 85 E2E en raíz. No se corrió la variante bajo /cnc-edu/.
+
+## Hoja de cotas
+
+- Botón «Hoja de cotas» en Pieza (y «Ver hoja de cotas · pedido vs. obtenido» en Prácticas al terminar). Abre un diálogo con un dibujo SVG de la pieza obtenida: medio corte, Ø por escalón en columnas laterales, longitudes en paralelo desde la cara frontal, conos con α/2, chaflanes, radios reconocidos y rótulo «Dibujo educativo — no es un plano de fabricación». Detalle en DIMENSION_SHEET.md.
+- Módulo puro `dimensionSheet.ts`: une tramos colineales (≤ 0,005 mm), absorbe astillas (< 0,01 mm) y acota una cadena de cuerdas como arco solo si toda la cadena ajusta a un círculo; si no, «perfil curvo».
+- La hoja sigue al cursor («Parcial — bloque n/N» o «Final — bloque N/N»). La tabla «Pedido vs. obtenido» aparece solo al final de una práctica guiada. Reutiliza la comprobación existente: `expectedProfileMatches` y `expectedAnnularProfileMatches` ahora usan las mismas filas (`sampledProfileChecks`, `annularReferenceChecks`).
+- «Descargar SVG» con el mismo patrón de descarga de ProjectActions. Rust y WASM sin cambios.

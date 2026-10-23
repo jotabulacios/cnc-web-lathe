@@ -18,7 +18,7 @@ Paso P1 de visual-review-2026-10-22/VISUAL_REVIEW.md. El usuario eligió la dire
 | Pestaña | Contenido |
 |---|---|
 | Programa | Editor G-code, «Restaurar ejemplo», recuperación, errores del motor, diagnósticos, «¿Qué puedo programar?» |
-| Pieza | Medidas y origen, herramienta inicial, tabla de correctores, ejemplo de mandrinado, modelo de corte y tabla de medidas del perfil |
+| Pieza | Medidas y origen, herramienta inicial, tabla de correctores, ejemplo de mandrinado, botón «Hoja de cotas» (DIMENSION_SHEET.md), modelo de corte y tabla de medidas del perfil |
 | Herramientas | Biblioteca T0–T5 e inspector |
 | Explicación | Explicación del bloque, abierta por defecto, y la nota del modelo educativo (reemplaza el pie de página) |
 | Prácticas | Ejemplos guiados y guardar/abrir proyecto, abiertos por defecto |

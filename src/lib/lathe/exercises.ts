@@ -5,7 +5,7 @@ import { draftFromSetup } from './setup.ts';
 import { copyDocument, normalizeLineEndings, sameSetup, type LabDocument } from './document.ts';
 import { profileRadiusAt, profileVolumeMm3, type MeasuredSpan } from './profileMeasures.ts';
 import type { StockProfileV3 } from './annularProfile.ts';
-import { annularRadiiAt, annularVolumeMm3 } from './annularMeasures.ts';
+import { annularRadiiAt, annularVolumeMm3, type MeasuredAnnularSpan } from './annularMeasures.ts';
 
 /** Cylindrical expectations keep `radiusMm`; conical ones use `rStartMm`/`rEndMm`. */
 export const expectedSpanSchema = z.union([profileSpanSchema, linearProfileSpanSchema]);
@@ -98,13 +98,42 @@ export function expectedProfileMatches(actual:readonly ResolvedSpan[],exercise:E
   if(!actual.length||actual[0].zStartMm!==-exercise.setup.stock.lengthMm||actual.at(-1)!.zEndMm!==0) return false;
   const stockRadius=exercise.setup.stock.diameterMm/2;
   if(actual.some(span=>'radiusMm' in span?span.radiusMm>stockRadius:span.rStartMm>stockRadius||span.rEndMm>stockRadius)) return false;
-  const expected=exercise.expectedProfile;
-  const volume=profileVolumeMm3(actual);
-  if(volume===null||Math.abs(volume-expected.volumeMm3)>expected.volumeToleranceMm3) return false;
-  return expected.samples.every(sample=>{
-    const radius=profileRadiusAt(actual,sample.zMm);
-    return radius!==null&&Math.abs(radius-sample.radiusMm)<=sample.toleranceMm;
+  return sampledProfileChecks(actual,exercise.expectedProfile).every(check=>check.ok);
+}
+
+/** One reference row: values are diameters (or mm³ for volume), compared in radius. */
+export type ReferenceCheck = { kind: 'outer' | 'inner' | 'volume'; zMm: number | null;
+  expected: number; obtained: number | null; tolerance: number; ok: boolean };
+const radialCheck = (kind: 'outer' | 'inner', zMm: number, want: number, got: number | null, tol: number): ReferenceCheck =>
+  ({ kind, zMm, expected: want * 2, obtained: got === null ? null : got * 2, tolerance: tol * 2, ok: got !== null && Math.abs(got - want) <= tol });
+const volumeCheck = (want: number, got: number | null, tol: number): ReferenceCheck =>
+  ({ kind: 'volume', zMm: null, expected: want, obtained: got, tolerance: tol, ok: got !== null && Math.abs(got - want) <= tol });
+/** Per-sample decomposition used both by the confirmation and the "pedido vs. obtenido" table. */
+export function sampledProfileChecks(actual: readonly ResolvedSpan[], expected: z.infer<typeof sampledProfileSchema>): ReferenceCheck[] {
+  return [...expected.samples.map(sample => radialCheck('outer', sample.zMm, sample.radiusMm, profileRadiusAt(actual, sample.zMm), sample.toleranceMm)),
+    volumeCheck(expected.volumeMm3, profileVolumeMm3(actual), expected.volumeToleranceMm3)];
+}
+/** Informative rows for span catalogues: cylinders at mid length, cones just inside each end
+ * (a shoulder radius is ambiguous). The confirmation itself stays `expectedSpansMatch`. */
+export function expectedSpanChecks(actual: readonly ResolvedSpan[], expected: readonly ExpectedSpan[], toleranceMm: number): ReferenceCheck[] {
+  return expected.flatMap(span => {
+    const a = 'radiusMm' in span ? span.radiusMm : span.rStartMm;
+    const b = 'radiusMm' in span ? span.radiusMm : span.rEndMm;
+    const length = span.zEndMm - span.zStartMm;
+    const ts = a === b ? [0.5] : [1e-3, 1 - 1e-3];
+    return ts.map(t => {
+      const zMm = span.zStartMm + t * length;
+      return radialCheck('outer', zMm, a + (b - a) * t, profileRadiusAt(actual, zMm), toleranceMm);
+    });
   });
+}
+/** Annular rows: inner and outer diameter per sample plus the recomputed volume. */
+export function annularReferenceChecks(actual: readonly MeasuredAnnularSpan[], want: AnnularReference): ReferenceCheck[] {
+  return [...want.samples.flatMap(sample => {
+    const radii = annularRadiiAt(actual, sample.zMm);
+    return [radialCheck('outer', sample.zMm, sample.outerRadiusMm, radii?.outerMm ?? null, sample.toleranceMm),
+      radialCheck('inner', sample.zMm, sample.innerRadiusMm, radii?.innerMm ?? null, sample.toleranceMm)];
+  }), volumeCheck(want.volumeMm3, annularVolumeMm3(actual), want.volumeToleranceMm3)];
 }
 
 /** Interior and exterior references are both required; exterior geometry alone
@@ -116,15 +145,16 @@ export function expectedAnnularProfileMatches(profile: StockProfileV3, exercise:
   const inner = (exercise.setup.stock.innerDiameterMm ?? 0) / 2;
   const outer = exercise.setup.stock.diameterMm / 2;
   if (actual.some(s => Math.min(s.innerStartMm, s.innerEndMm) < inner || Math.max(s.outerStartMm, s.outerEndMm) > outer)) return false;
-  const volume = annularVolumeMm3(actual);
-  if (volume === null || !Number.isFinite(profile.volumeMm3)
-    || Math.abs(volume - want.volumeMm3) > want.volumeToleranceMm3
-    || Math.abs(profile.volumeMm3 - want.volumeMm3) > want.volumeToleranceMm3) return false;
-  return want.samples.every(sample => {
-    const radii = annularRadiiAt(actual, sample.zMm);
-    return radii !== null && Math.abs(radii.innerMm - sample.innerRadiusMm) <= sample.toleranceMm
-      && Math.abs(radii.outerMm - sample.outerRadiusMm) <= sample.toleranceMm;
-  });
+  if (!Number.isFinite(profile.volumeMm3) || Math.abs(profile.volumeMm3 - want.volumeMm3) > want.volumeToleranceMm3) return false;
+  return annularReferenceChecks(actual, want).every(check => check.ok);
+}
+/** Rows for the "pedido vs. obtenido" table of the active practice's single criterion.
+ * The verdict itself still comes from `assessExercise`. */
+export function exerciseReferenceChecks(exercise: Exercise, profile: StockProfileV2 | StockProfileV3): ReferenceCheck[] {
+  if (exercise.expectedAnnularProfile) return profile.profileVersion === 3 ? annularReferenceChecks(profile.spans, exercise.expectedAnnularProfile) : [];
+  if (profile.profileVersion === 3) return [];
+  return exercise.expectedProfile ? sampledProfileChecks(profile.spans, exercise.expectedProfile)
+    : expectedSpanChecks(profile.spans, exercise.expectedSpans, exercise.toleranceMm);
 }
 /** Compare only resolved Rust output. This is a walkthrough, not a CNC parser or grader. */
 export function assessExercise(exercise: Exercise, input: AssessmentInput): ExerciseAssessment {

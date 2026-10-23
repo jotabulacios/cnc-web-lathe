@@ -11,8 +11,9 @@ import ToolInspector from './ToolInspector';
 import ToolOffsetsEditor from './ToolOffsetsEditor';
 import IsoToolsEditor from './IsoToolsEditor';
 import { resolveAssemblies, type IsoTools } from '../lib/lathe/isoTools';
-import { exerciseDocument } from '../lib/lathe/exercises';
-import { assessPractice, type Practice } from '../lib/lathe/diagnosticExercises';
+import DimensionSheetDialog from './DimensionSheet';
+import { exerciseDocument, exerciseReferenceChecks } from '../lib/lathe/exercises';
+import { assessPractice, isDiagnostic, type Practice } from '../lib/lathe/diagnosticExercises';
 import { copyDocument, normalizeLineEndings, replaceDocument, type LabDocument } from '../lib/lathe/document';
 import type { EditorFocusRequest } from '../lib/lathe/editorLocation';
 import { compileProgram, computeLabProfile } from '../lib/lathe/engine';
@@ -119,6 +120,16 @@ export default function LatheLab({ initialSource, exercises }: { initialSource: 
   const activeExercise = exercises.find(e => e.id === activeExerciseId);
   const exerciseAssessment = activeExercise ? assessPractice(activeExercise, { source, setup: validation.setup,
     revision: playback.revision, cursor, result, profile: geometry, profileError }) : null;
+  // Dimension sheet follows the profile at the cursor; partial until the last block.
+  const [sheetOpen, setSheetOpen] = useState(false);
+  const sheetFinal = Boolean(geometry?.complete && cursor === total && total > 0);
+  const sheetStatus = sheetFinal ? `Final — bloque ${cursor}/${total}` : `Parcial — bloque ${geometry?.evaluatedBlocks ?? cursor}/${total}`;
+  const sheetTools = [...new Set((result?.motions ?? []).filter(m => m.blockId < cursor && m.kind !== 'rapid').map(m => m.toolId))]
+    .map(id => getToolDefinition(id)).map(tool => `T${tool.station} ${tool.shortName}`);
+  const sheetComparison = activeExercise && !isDiagnostic(activeExercise) && geometry && exerciseAssessment
+    && (exerciseAssessment.kind === 'complete' || exerciseAssessment.kind === 'mismatch')
+    ? { title: exerciseAssessment.title, ok: exerciseAssessment.kind === 'complete', checks: exerciseReferenceChecks(activeExercise, geometry) } : null;
+  const fileName = activeExercise?.file ?? 'practica-torno.nc';
   const statusLabel = !validation.setup ? 'Completá la configuración'
     : status === 'loading' ? 'Preparando programa…'
     : status === 'error' ? 'Error al preparar'
@@ -327,6 +338,7 @@ export default function LatheLab({ initialSource, exercises }: { initialSource: 
           }}>Cargar ejemplo de mandrinado</button>
           <p className="setup-note">Interior Ø0 indica sólido. Un tubo requiere un agujero existente; T5 es mandrinado. Z0 está en la cara frontal y Z negativo va hacia el plato. Al cambiar una medida o herramienta, volvé a interpretar el programa.{!validation.setup && ' La vista conserva la última configuración válida.'}</p>
         </div>
+        <div className="sheet-launch"><button onClick={() => setSheetOpen(true)} disabled={!geometry?.spans.length}>Hoja de cotas</button><span>{geometry?.spans.length ? `${sheetStatus} · dibujo con cotas de la pieza obtenida` : 'Interpretá el programa para dibujar la pieza.'}</span></div>
         <details className="profile-details"><summary>Modelo de corte y medidas del perfil</summary><p>En sólidos: cilindrado, conos y arcos exteriores hacia Z negativo; refrentado frontal G01 hasta X0. En tubos: G00/G01 longitudinales y T5 desde un agujero existente; refrentado exterior completo hasta el agujero. El corte requiere husillo encendido y S mayor que cero; los rápidos no remueven material. Los arcos se aproximan con cuerdas de tolerancia perpendicular 0,01 mm. La herramienta corta con punta ideal o con el radio de punta de la tabla.</p>
           {geometry && geometry.spans.length > 0 && <table aria-label="Medidas del perfil calculado"><thead><tr><th>Z inicial (mm)</th><th>Z final (mm)</th><th>Diámetro exterior inicio → fin (mm)</th>{geometry.profileVersion === 3 && <th>Diámetro interior inicio → fin (mm)</th>}</tr></thead><tbody>{exteriorSpans(geometry).slice(-20).map((span, i) => <tr key={i}><td>{format(span.zStartMm)}</td><td>{format(span.zEndMm)}</td><td>{span.rStartMm === span.rEndMm ? format(span.rStartMm * 2) : `${format(span.rStartMm * 2)} → ${format(span.rEndMm * 2)}`}</td>{geometry.profileVersion === 3 && <td>{format(geometry.spans.slice(-20)[i].innerStartMm * 2)} → {format(geometry.spans.slice(-20)[i].innerEndMm * 2)}</td>}</tr>)}</tbody></table>}
           {geometry && geometry.spans.length > 20 && <p>Se muestran los últimos 20 de {geometry.spans.length} intervalos; los arcos se aproximan con tramos lineales.</p>}
@@ -346,8 +358,11 @@ export default function LatheLab({ initialSource, exercises }: { initialSource: 
 
       <div className="tab-panel" role="tabpanel" id="panel-practicas" aria-labelledby="tab-practicas" hidden={tab !== 'practicas'}>
         <GuidedPractice exercises={exercises} activeId={activeExerciseId} selectedId={selectedExerciseId} onSelect={setSelectedExerciseId} onLoad={loadExercise} assessment={exerciseAssessment} profile={geometry?.profileVersion === 3 ? geometry : null} onLocate={span => locate(span, activeExercise && 'diagnostic' in activeExercise ? activeExercise.diagnostic.severity : 'warning')}/>
+        {sheetComparison && <div className="sheet-launch"><button onClick={() => setSheetOpen(true)}>Ver hoja de cotas · pedido vs. obtenido</button></div>}
         <ProjectActions document={snapshot()} onOpen={openProject} getDocumentVersion={() => documentVersion.current}/>
       </div>
     </aside>
+    {geometry && geometry.spans.length > 0 && <DimensionSheetDialog open={sheetOpen} onClose={() => setSheetOpen(false)} profile={geometry} stock={setup.stock}
+      fileName={fileName} tools={sheetTools.length ? sheetTools : [`T${activeTool.station} ${activeTool.shortName}`]} status={sheetStatus} partial={!sheetFinal} comparison={sheetComparison}/>}
   </main>;
 }
