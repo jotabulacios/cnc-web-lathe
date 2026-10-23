@@ -178,3 +178,10 @@ La geometría dimensional educativa está integrada; el kernel de referencias es
 - Las pruebas existentes conservan todas sus verificaciones (comparado con el respaldo anterior).
 - Checks: 173 Rust, fmt/Clippy; 164 TS; 28 WASM; 85 E2E en raíz y 85 bajo /cnc-edu/. Hash WASM 0f873359…4a753d.
 - La referencia de lathesim (REFERENCE_LATHE_SIM.md) se revisó contra el estado actual. Las etapas A–C están cubiertas, salvo el ranurado con ancho real. Faltan puestas, mordazas, contacto y hoja de cotas, además de la vista dividida.
+
+## Prácticas de cono y arco con criterio de taller
+
+- El cono estaba invertido (decrecía hacia el plato) y el arco redondeaba hacia el plato: los dos obligaban a cortar con el flanco trasero de una cuchilla exterior a derechas. Se reescribieron con desbaste (T0101) y acabado (T0202). Detalle en GUIDED_EXERCISES.md.
+- Pruebas actualizadas: exercises.rs (oráculos analíticos), profile_v2.rs (prefijos del cono nuevo; v1 se detiene en el bloque 15 con UNSUPPORTED_PROFILE_CUT), exercises/wasm TS y E2E de cono y operaciones guiadas.
+- Checks: fmt/Clippy; 173 Rust; 164 TS; 28 WASM; 85 E2E en raíz y 85 bajo /cnc-edu/. Capturas en evidence/practices-shop-2026-10-22/.
+- Pendiente propuesto: aviso de ángulo de trabajo (corte fuera del espacio libre del inserto), primer paso hacia los chequeos de colisión.

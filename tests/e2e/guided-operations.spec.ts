@@ -14,17 +14,18 @@ async function step(page:Page){await page.getByRole('button',{name:'Siguiente bl
 test('guided circular profile confirms analytical references, shows tolerances and revokes after rewind or edit',async({page})=>{
   await load(page,'arc-convex');
   await page.locator('.practice-references>summary').click();
-  await expect(page.getByRole('table',{name:'Cotas de referencia del ejemplo'}).locator('tbody tr')).toHaveCount(7);
+  await expect(page.getByRole('table',{name:'Cotas de referencia del ejemplo'}).locator('tbody tr')).toHaveCount(6);
   await expect(page.locator('.practice-references')).toContainText('tolerancia ±20 mm³');
-  for(let i=0;i<9;i++)await step(page);
-  await expect(page.getByTestId('block-count')).toHaveText('9 / 9');
-  await expect(page.getByTestId('profile-status')).toHaveText('Perfil actualizado · bloque 9');
+  for(let i=0;i<17;i++)await step(page);
+  await expect(page.getByTestId('block-count')).toHaveText('17 / 17');
+  await expect(page.getByTestId('profile-status')).toHaveText('Perfil actualizado · bloque 17');
   await expect(page.getByTestId('exercise-status')).toHaveAttribute('data-state','complete');
   await expect(page.getByTestId('dro-tool-code')).toHaveText('T0202');
   await page.getByRole('button',{name:'Pieza 3D',exact:true}).click();
   const canvas=page.getByRole('img',{name:'Pieza de torno en 3D',exact:true});
-  await expect(canvas).toHaveAttribute('data-profile-blocks','9');
-  const analytical=Math.PI*(56250+5000/3+500*Math.PI);
+  await expect(canvas).toHaveAttribute('data-profile-blocks','17');
+  // Front round R5 on Ø40: π(1250 − 125/3 + 187.5π) + Ø40 × 25 + Ø50 × 70.
+  const analytical=Math.PI*(625*70+400*25+1250-125/3+187.5*Math.PI);
   expect(Math.abs(Number(await canvas.getAttribute('data-profile-volume'))-analytical)).toBeLessThan(20);
   await page.getByRole('button',{name:'← Anterior',exact:true}).click();
   await expect(page.getByTestId('exercise-status')).toHaveAttribute('data-state','progress');

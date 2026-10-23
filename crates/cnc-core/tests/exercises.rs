@@ -82,6 +82,14 @@ fn profile_volume(profile: &StockProfileV2) -> f64 {
         .sum()
 }
 
+/// Independent analytic reference for a guided practice drawn from its drawing.
+struct Oracle {
+    volume: f64,
+    radius: fn(f64) -> f64,
+    samples: [f64; 5],
+    sample_tolerance: f64,
+}
+
 #[test]
 fn guided_catalogue_programs_match_each_analytical_profile_and_finish_retracted() {
     let catalogue: serde_json::Value =
@@ -211,21 +219,44 @@ fn guided_catalogue_programs_match_each_analytical_profile_and_finish_retracted(
                     expected["volumeToleranceMm3"].as_f64().unwrap(),
                     "analytical volume",
                 );
-                // The quarter-circle radius is r(Z)=10+sqrt(100-Z²), Z∈[-10,0].
-                // Its exact integral plus untouched stock is π(56250+5000/3+500π).
+                // Independent oracles, computed from the drawing, not from the engine.
                 let pi = std::f64::consts::PI;
+                let Oracle {
+                    volume,
+                    radius,
+                    samples,
+                    sample_tolerance,
+                } = match exercise["id"].as_str().unwrap() {
+                    // Cone Ø30 at Z0 → Ø46 at Z−40 (frustum) plus Ø50 stock over 60 mm.
+                    "taper" => Oracle {
+                        volume: pi * (625.0 * 60.0 + 40.0 * (225.0 + 345.0 + 529.0) / 3.0),
+                        radius: |z| 15.0 - 0.2 * z,
+                        samples: [-39.0, -30.0, -20.0, -10.0, 0.0],
+                        sample_tolerance: tolerance,
+                    },
+                    // Front-corner round R5 centred at (Z−5, R15): r = 15 + √(25 − (Z+5)²).
+                    // Its integral is π(1250 − 125/3 + 187.5π); then Ø40 × 25 and Ø50 × 70.
+                    "arc-convex" => Oracle {
+                        volume: pi
+                            * (625.0 * 70.0 + 400.0 * 25.0 + 1250.0 - 125.0 / 3.0 + 187.5 * pi),
+                        radius: |z| 15.0 + (25.0 - (z + 5.0) * (z + 5.0)).sqrt(),
+                        samples: [-5.0, -4.0, -2.5, -1.0, 0.0],
+                        sample_tolerance: ARC_CHORD_TOLERANCE_MM * 2.0,
+                    },
+                    other => panic!("no independent oracle for {other}"),
+                };
                 close(
                     expected["volumeMm3"].as_f64().unwrap(),
-                    pi * (56250.0 + 5000.0 / 3.0 + 500.0 * pi),
-                    tolerance,
+                    volume,
+                    1e-6,
                     "catalogue analytic volume",
                 );
-                for z in [-10.0_f64, -8.0, -5.0, -2.0, 0.0] {
+                for z in samples {
                     close(
                         sample_radius(&profile, z),
-                        10.0 + (100.0 - z * z).sqrt(),
-                        ARC_CHORD_TOLERANCE_MM * 2.0,
-                        "independent circular radius",
+                        radius(z),
+                        sample_tolerance,
+                        "independent radius",
                     );
                 }
             }
@@ -257,15 +288,16 @@ fn guided_catalogue_programs_match_each_analytical_profile_and_finish_retracted(
             );
         }
         if exercise["id"] == "taper" {
+            // Block 15 is the finishing cone X46 Z−40.
             close(
-                result.blocks[3].after_state.position.r_mm,
-                10.0,
+                result.blocks[14].after_state.position.r_mm,
+                23.0,
                 tolerance,
                 "cone radius",
             );
             close(
-                result.blocks[3].after_state.position.z_mm,
-                -60.0,
+                result.blocks[14].after_state.position.z_mm,
+                -40.0,
                 tolerance,
                 "cone Z",
             );

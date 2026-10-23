@@ -26,37 +26,66 @@ fn spans(p: &StockProfileV2) -> Vec<(f64, f64, f64, f64)> {
 }
 const TAPER: &str = include_str!("../../../fixtures/lathe/taper-turning.nc");
 
+/// Radius of a reconstructed exterior profile at axial `z` (first containing span).
+fn radius_at(p: &StockProfileV2, z: f64) -> f64 {
+    let s = p
+        .spans
+        .iter()
+        .find(|s| s.z_start_mm <= z && z <= s.z_end_mm)
+        .unwrap();
+    s.r_start_mm + (z - s.z_start_mm) / (s.z_end_mm - s.z_start_mm) * (s.r_end_mm - s.r_start_mm)
+}
+
 #[test]
 fn taper_fixture_has_analytical_prefixes_and_repeatable_backward_reset() {
+    // Shop-style cone: roughing to Ø42 (block 6) and Ø36 (block 9), then the
+    // finishing cone Ø30 at Z0 → Ø46 at Z−40 (block 15).
     let req = request(TAPER);
     let program = compile(&req);
     assert!(program.executable);
-    assert_eq!(program.blocks.len(), 8);
-    for cursor in (0..=8).chain((0..=8).rev()) {
+    assert_eq!(program.blocks.len(), 19);
+    for cursor in (0..=19).chain((0..=19).rev()) {
         let p = profile_at_v2(&program, &req.setup.stock, cursor);
         assert!(p.complete, "{cursor}: {:?}", p.diagnostics);
         assert_eq!(p.evaluated_blocks, cursor);
         assert_eq!(p.completed_blocks, cursor);
         assert_eq!(p.source_revision, 42);
         assert_eq!(p.profile_version, 2);
-        assert_eq!(
-            spans(&p),
-            if cursor < 4 {
-                vec![(-100.0, 0.0, 25.0, 25.0)]
-            } else {
-                vec![(-100.0, -60.0, 25.0, 25.0), (-60.0, 0.0, 10.0, 20.0)]
+        match cursor {
+            0..=5 => assert_eq!(spans(&p), vec![(-100.0, 0.0, 25.0, 25.0)]),
+            6..=8 => assert_eq!(
+                spans(&p),
+                vec![(-100.0, -29.0, 25.0, 25.0), (-29.0, 0.0, 21.0, 21.0)]
+            ),
+            9..=14 => assert_eq!(
+                spans(&p),
+                vec![
+                    (-100.0, -29.0, 25.0, 25.0),
+                    (-29.0, -14.0, 21.0, 21.0),
+                    (-14.0, 0.0, 18.0, 18.0)
+                ]
+            ),
+            _ => {
+                for z in [-39.0, -30.0, -20.0, -10.0, 0.0] {
+                    assert!(
+                        (radius_at(&p, z) - (15.0 - 0.2 * z)).abs() < 1e-12,
+                        "{cursor} Z{z}"
+                    );
+                }
+                assert_eq!(radius_at(&p, -75.0), 25.0);
             }
-        );
+        }
         assert_eq!(
             serde_json::to_value(&p).unwrap(),
             serde_json::to_value(profile_at_v2(&program, &req.setup.stock, cursor)).unwrap()
         );
     }
-    // The additive native API never changes the existing profile export semantics.
-    let old = profile_at(&program, &req.setup.stock, 8);
+    // The additive native API never changes the existing profile export semantics:
+    // v1 follows the cylindrical roughing and stops at the cone.
+    let old = profile_at(&program, &req.setup.stock, 19);
     assert_eq!(old.profile_version, 1);
     assert!(!old.complete);
-    assert_eq!(old.evaluated_blocks, 3);
+    assert_eq!(old.evaluated_blocks, 14);
     assert_eq!(old.diagnostics[0].code, "UNSUPPORTED_PROFILE_CUT");
 }
 
@@ -156,7 +185,7 @@ fn invalid_program_cursor_stock_and_initial_position_never_panic() {
     let req = request(TAPER);
     let program = compile(&req);
     assert_eq!(
-        profile_at_v2(&program, &req.setup.stock, 9).diagnostics[0].code,
+        profile_at_v2(&program, &req.setup.stock, 20).diagnostics[0].code,
         "INVALID_PROFILE_REQUEST"
     );
     let invalid = compile(&request("G71 X20"));

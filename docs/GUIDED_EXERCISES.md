@@ -49,3 +49,17 @@ Verificación final: 82 pruebas Rust, 85 TypeScript y 17 sobre WASM real correct
 El catálogo de pantalla compone siete recorridos positivos y dos prácticas de diagnóstico, sin alterar los seis casos originales. Ver DIAGNOSTIC_PRACTICES.md: la observación de un diagnóstico no se presenta como perfil confirmado.
 
 Entrega cerrada: 84 pruebas Rust, 89 TypeScript y 18 WASM real correctas; fmt, Clippy, typecheck y ESLint correctos. Builds estáticos y 57 E2E Chromium raíz (35,7 s) y 57 bajo /cnc-edu/ (38,3 s) correctos, incluida persistencia de la práctica. Export raíz restaurado y preview 3100 actualizado. QA real en pestaña nueva: SPINDLE_OFF en línea 4, selección G01 Z-20 F120, perfil congelado tras 3 bloques; corrección recorrida 8/8 con perfil confirmado; G71 seleccionado y ejecución bloqueada. Evidencia docs/evidence/diagnostic-practices/, capturas outputs/torno-diagnostico-husillo.png y torno-diagnostico-codigo.png. Sin ampliación de códigos ni cambios a semántica Rust o ABI WASM. ZIPs de fuentes y preview renovados y comprobados al cerrar.
+
+## Revisión de taller: cono y arco reescritos (2026-10-22)
+
+Un usuario señaló que el arco chocaba en un torno real y que el cono estaba invertido. Las dos observaciones eran correctas para una cuchilla exterior a derechas, que corta hacia −Z con el filo delantero.
+
+- **Cono anterior** (Ø20 en Z−60 → Ø40 en Z0): el diámetro decrecía hacia el plato. La herramienta tenía que bajar mientras avanzaba hacia −Z, es decir, cortar con el flanco trasero (rebaje). Además sacaba 10 mm de radio en una sola pasada.
+- **Arco anterior** (G03 X20 Z−10 I−10 K0): redondeaba el frente hacia el plato, con la misma dirección de flanco trasero, y el mango chocaba con la pieza.
+
+Programas nuevos, con desbaste y acabado como en taller:
+
+- `taper-turning.nc` (19 bloques): T0101 desbasta a Ø42 hasta Z−29 y a Ø36 hasta Z−14, con retiros en diagonal (G00 X54 Z2). T0202 a S1200 hace el cono de acabado, Ø30 en Z0 → Ø46 en Z−40: el diámetro crece hacia el plato. Volumen π(625·60 + 40·1099/3).
+- `arc-convex.nc` (17 bloques): T0101 desbasta a Ø41 hasta Z−30. T0202 hace el redondeo convexo R5 en la esquina del frente, `G03 X40 Z−5 I0 K−5` desde X30 Z0, y sigue el cilindro Ø40 hasta Z−30. Volumen π(625·70 + 400·25 + 1250 − 125/3 + 187,5π); el motor queda a ~5,5 mm³ por las cuerdas (tolerancia 20 mm³).
+
+Ambos usan `expectedProfile` (muestras + volumen) y `expectedFinalToolId: finishing-od`. Las pruebas Rust comparan contra oráculos analíticos independientes del catálogo. Esto sigue siendo un ejemplo educativo: no verifica ángulos de trabajo del inserto ni colisiones del portaherramientas.

@@ -72,21 +72,24 @@ test('the catalogue accepts conical expectations and compares both radial endpoi
   const taper = exercises.find(item => item.id === 'taper')!;
   assert.ok(taper, 'falta el ejemplo cónico');
   assert.equal(taper.file, 'taper-turning.nc');
-  assert.equal(taper.blockCount, 8);
-  assert.deepEqual(taper.expectedSpans, [
-    { zStartMm: -100, zEndMm: -60, rStartMm: 25, rEndMm: 25 },
-    { zStartMm: -60, zEndMm: 0, rStartMm: 10, rEndMm: 20 },
-  ]);
-  const resolved = [
-    { zStartMm: -100, zEndMm: -60, rStartMm: 25, rEndMm: 25 },
-    { zStartMm: -60, zEndMm: 0, rStartMm: 10, rEndMm: 20 },
+  assert.equal(taper.blockCount, 19);
+  assert.deepEqual(taper.expectedSpans, []);
+  assert.equal(taper.expectedFinalToolId, 'finishing-od');
+  // Span-by-span comparison still checks both radial endpoints of a conical span.
+  const coneSpans = [
+    { zStartMm: -100, zEndMm: -40, rStartMm: 25, rEndMm: 25 },
+    { zStartMm: -40, zEndMm: 0, rStartMm: 23, rEndMm: 15 },
   ];
-  assert.equal(expectedSpansMatch(resolved, taper.expectedSpans, 1e-9), true);
-  // A reversed cone is geometrically plausible but not this walkthrough.
-  assert.equal(expectedSpansMatch([resolved[0], { zStartMm: -60, zEndMm: 0, rStartMm: 20, rEndMm: 10 }], taper.expectedSpans, 1e-9), false);
-  assert.equal(expectedSpansMatch([resolved[0], { ...resolved[1], rEndMm: 20 + 5e-10 }], taper.expectedSpans, 1e-9), true);
-  assert.equal(expectedSpansMatch([resolved[0], { ...resolved[1], rEndMm: 20 + 2e-9 }], taper.expectedSpans, 1e-9), false);
-  assert.equal(expectedSpansMatch(resolved.slice(0, 1), taper.expectedSpans, 1e-9), false);
+  const resolved = coneSpans.map(span => ({ ...span }));
+  assert.equal(expectedSpansMatch(resolved, coneSpans, 1e-9), true);
+  assert.equal(expectedSpansMatch([resolved[0], { zStartMm: -40, zEndMm: 0, rStartMm: 15, rEndMm: 23 }], coneSpans, 1e-9), false);
+  assert.equal(expectedSpansMatch([resolved[0], { ...resolved[1], rEndMm: 15 + 5e-10 }], coneSpans, 1e-9), true);
+  assert.equal(expectedSpansMatch([resolved[0], { ...resolved[1], rEndMm: 15 + 2e-9 }], coneSpans, 1e-9), false);
+  assert.equal(expectedSpansMatch(resolved.slice(0, 1), coneSpans, 1e-9), false);
+  // The guided cone grows toward the chuck. Its reverse (an undercut a right-hand
+  // OD tool cannot cut) has the same volume but is rejected by the samples.
+  assert.equal(expectedProfileMatches(resolved, taper), true);
+  assert.equal(expectedProfileMatches([resolved[0], { zStartMm: -40, zEndMm: 0, rStartMm: 15, rEndMm: 23 }], taper), false);
   // Cylindrical expectations still use the single radius.
   assert.equal(expectedSpansMatch(
     [{ zStartMm: -100, zEndMm: -60, radiusMm: 25 }, { zStartMm: -60, zEndMm: 0, radiusMm: 20 }],
@@ -95,18 +98,28 @@ test('the catalogue accepts conical expectations and compares both radial endpoi
 
 test('the conical walkthrough is confirmed only by the full cone profile', () => {
   const taper = exercises.find(item => item.id === 'taper')!;
-  // Synthetic decision input: real contract fixture, 8 blocks so the M30 lands last.
-  const coneResult = { ...result, sourceRevision: 9, blocks: [...result.blocks.slice(0, 7), result.blocks.at(-1)!] } as CompileResult;
-  const coneProfile = stockProfileV2Schema.parse({ profileVersion: 2, sourceRevision: 9, completedBlocks: 8,
-    evaluatedBlocks: 8, complete: true, spans: taper.expectedSpans, diagnostics: [] });
-  const coneInput = () => ({ source: taper.source, setup: taper.setup, revision: 9, cursor: 8,
+  // Synthetic decision input from a real contract fixture: 19 blocks so the M30
+  // lands last, ending with the finishing tool like the guided program.
+  const finishing = { ...result.finalState!, toolId: 'finishing-od' as const };
+  const lastBlock = { ...result.blocks.at(-1)!, afterState: finishing };
+  const padding = Array.from({ length: 10 }, () => result.blocks[1]);
+  const coneResult = { ...result, sourceRevision: 9, finalState: finishing,
+    blocks: [...result.blocks.slice(0, 8), ...padding, lastBlock] } as CompileResult;
+  assert.equal(coneResult.blocks.length, 19);
+  const coneSpans = [
+    { zStartMm: -100, zEndMm: -40, rStartMm: 25, rEndMm: 25 },
+    { zStartMm: -40, zEndMm: 0, rStartMm: 23, rEndMm: 15 },
+  ];
+  const coneProfile = stockProfileV2Schema.parse({ profileVersion: 2, sourceRevision: 9, completedBlocks: 19,
+    evaluatedBlocks: 19, complete: true, spans: coneSpans, diagnostics: [] });
+  const coneInput = () => ({ source: taper.source, setup: taper.setup, revision: 9, cursor: 19,
     result: coneResult, profile: coneProfile, profileError: null as string | null });
   assert.equal(assessExercise(taper, coneInput()).kind, 'complete');
   const reversed = { ...coneProfile, spans: coneProfile.spans.map((span, i) => i
     ? { ...span, rStartMm: span.rEndMm, rEndMm: span.rStartMm } : span) };
   assert.equal(assessExercise(taper, { ...coneInput(), profile: reversed }).kind, 'mismatch');
-  assert.equal(assessExercise(taper, { ...coneInput(), cursor: 7 }).kind, 'progress');
-  assert.equal(assessExercise(taper, { ...coneInput(), profile: { ...coneProfile, complete: false, evaluatedBlocks: 7 } }).kind, 'blocked');
+  assert.equal(assessExercise(taper, { ...coneInput(), cursor: 18 }).kind, 'progress');
+  assert.equal(assessExercise(taper, { ...coneInput(), profile: { ...coneProfile, complete: false, evaluatedBlocks: 18 } }).kind, 'blocked');
 });
 
 test('document snapshots keep invalid drafts and are isolated; repeated loads preserve the previous copy', () => {

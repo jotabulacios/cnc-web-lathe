@@ -91,20 +91,28 @@ function profile(text:string, completedBlocks:number) {
 
 test('additive WASM v2 produces the analytical taper at every prefix while legacy stays v1',()=>{
   const source=readFileSync(new URL('../fixtures/lathe/taper-turning.nc',import.meta.url),'utf8');
-  for(let cursor=0;cursor<=8;cursor++) {
+  const cone=(z:number)=>15-0.2*z; // Ø30 at Z0 → Ø46 at Z−40
+  const radiusAt=(spans:{zStartMm:number;zEndMm:number;rStartMm:number;rEndMm:number}[],z:number)=>{
+    const s=spans.find(s=>s.zStartMm<=z&&z<=s.zEndMm)!;
+    return s.rStartMm+(z-s.zStartMm)/(s.zEndMm-s.zStartMm)*(s.rEndMm-s.rStartMm);
+  };
+  for(let cursor=0;cursor<=19;cursor++) {
     const value=stockProfileV2Schema.parse(wasm.stock_profile_v2({program:request(source),completedBlocks:cursor}));
-    assert.equal(value.complete,true);
+    assert.equal(value.complete,true,`@${cursor}`);
     assert.equal(value.profileVersion,2);
     assert.equal(value.sourceRevision,1);
     assert.equal(value.evaluatedBlocks,cursor);
     assert.equal(value.completedBlocks,cursor);
-    assert.deepEqual(value.spans,cursor<4 ? [{zStartMm:-100,zEndMm:0,rStartMm:25,rEndMm:25}]
-      : [{zStartMm:-100,zEndMm:-60,rStartMm:25,rEndMm:25},{zStartMm:-60,zEndMm:0,rStartMm:10,rEndMm:20}]);
+    // Roughing never cuts below the final cone (no gouge at any prefix).
+    for(const z of [-39,-30,-20,-10,0]) assert.ok(radiusAt(value.spans,z)>=cone(z)-1e-9,`@${cursor} Z${z}`);
+    if(cursor===6) assert.equal(radiusAt(value.spans,-20),21,'first roughing pass at Ø42');
   }
-  const legacy=profile(source,8);
+  const final=stockProfileV2Schema.parse(wasm.stock_profile_v2({program:request(source),completedBlocks:19}));
+  for(const z of [-39,-30,-20,-10,0]) assert.ok(Math.abs(radiusAt(final.spans,z)-cone(z))<1e-9);
+  assert.equal(radiusAt(final.spans,-75),25);
+  const legacy=profile(source,19);
   assert.equal(legacy.profileVersion,1);
   assert.equal(legacy.complete,false);
-  assert.equal(legacy.evaluatedBlocks,3);
   assert.equal(legacy.diagnostics[0].code,'UNSUPPORTED_PROFILE_CUT');
 });
 
@@ -274,7 +282,10 @@ test('guided arc confirmation rejects a reversed arc profile with the same volum
   const arc=exercisesSchema.parse(catalogue.map(e=>({...e,source:readFileSync(new URL(String(e.file),dir),'utf8')}))).find(e=>e.id==='arc-convex')!;
   const profile=stockProfileV2Schema.parse(wasm.stock_profile_v2({program:{...request(arc.source),setup:arc.setup},completedBlocks:arc.blockCount}));
   assert.equal(expectedProfileMatches(profile.spans,arc),true);
-  const reversed=[profile.spans[0],...profile.spans.slice(1).toReversed().map(span=>({zStartMm:-10-span.zEndMm,zEndMm:-10-span.zStartMm,rStartMm:span.rEndMm,rEndMm:span.rStartMm}))];
+  // Mirror the front zone (Z−5…0, the round) so it faces the chuck: same volume, wrong shape.
+  const front=profile.spans.filter(span=>span.zStartMm>=-5);
+  const rest=profile.spans.filter(span=>span.zStartMm<-5);
+  const reversed=[...rest,...front.toReversed().map(span=>({zStartMm:-5-span.zEndMm,zEndMm:-5-span.zStartMm,rStartMm:span.rEndMm,rEndMm:span.rStartMm}))];
   assert.ok(Math.abs(profileVolumeMm3(reversed)!-profileVolumeMm3(profile.spans)!)<1e-6);
   assert.equal(expectedProfileMatches(reversed,arc),false);
 });
