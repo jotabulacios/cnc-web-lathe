@@ -8,6 +8,7 @@ import { getToolDefinition } from './tools';
 import { orthographicFrame } from './orthographic';
 import { createToolObject } from './toolObject';
 import type { DisplayAssembly } from './toolAssemblies';
+import { jawZone, type ChuckJaws } from './chuck';
 
 type Stock = { lengthMm: number; diameterMm: number };
 export type ThreeScene = ReturnType<typeof createThreeScene>;
@@ -70,6 +71,12 @@ export function createThreeScene(host: HTMLElement, stock: Stock, onFailure: (me
     const edges = new THREE.LineSegments(new THREE.BufferGeometry(), edgeMaterial);
     mesh.add(edges);
     resources.push(() => { mesh.geometry.dispose(); edges.geometry.dispose(); edgeMaterial.dispose(); material.dispose(); sectionMaterial.dispose(); });
+    // Nominal chuck jaws: three boxes at 120° over the gripped stock (obstacle only).
+    const jawGroup = new THREE.Group();
+    jawGroup.name = 'chuck-jaws';
+    scene.add(jawGroup);
+    const jawMaterial = new THREE.MeshStandardMaterial({ color: 0x7d8995, roughness: 0.55, metalness: 0.5 });
+    resources.push(() => { for (const child of jawGroup.children) (child as THREE.Mesh).geometry.dispose(); jawMaterial.dispose(); });
     let toolObject: ReturnType<typeof createToolObject> | null = null;
     let activeToolId = '';
     const scaleMm = Math.max(stock.lengthMm, stock.diameterMm);
@@ -174,6 +181,7 @@ export function createThreeScene(host: HTMLElement, stock: Stock, onFailure: (me
         mesh.updateMatrixWorld(true);
         const bounds = new THREE.Box3().setFromObject(mesh);
         if (tool.visible) bounds.expandByObject(tool);
+        if (jawGroup.children.length) bounds.expandByObject(jawGroup);
         if (bounds.isEmpty()) bounds.setFromCenterAndSize(new THREE.Vector3(), new THREE.Vector3(1, 1, 1));
         const sphere = bounds.getBoundingSphere(new THREE.Sphere());
         sphere.radius = Math.max(sphere.radius, 0.5);
@@ -203,6 +211,28 @@ export function createThreeScene(host: HTMLElement, stock: Stock, onFailure: (me
         ]);
         renderer.domElement.setAttribute('aria-description', `Punta ideal en X diámetro ${position.rMm * 2} y Z ${position.zMm} mm.`);
         return true;
+      },
+      /** Rebuild the nominal jaws; they also hold a short seat inside the chuck (as in 2D). */
+      setJaws(jaws: ChuckJaws) {
+        if (disposed || failed) return;
+        for (const child of [...jawGroup.children]) { (child as THREE.Mesh).geometry.dispose(); jawGroup.remove(child); }
+        const zone = jawZone(stock, jaws);
+        const seat = Math.max(stock.lengthMm * 0.05, 3);
+        const length = (zone.faceZ - zone.chuckZ + seat) / scaleMm;
+        const height = jaws.jawHeightMm / scaleMm;
+        const width = Math.max(stock.diameterMm * 0.35, 6) / scaleMm;
+        const centerX = ((zone.chuckZ - seat + zone.faceZ) / 2 + stock.lengthMm / 2) / scaleMm;
+        const radial = (zone.innerR + jaws.jawHeightMm / 2) / scaleMm;
+        for (let i = 0; i < 3; i++) {
+          const angle = Math.PI / 2 + i * 2 * Math.PI / 3;
+          const jaw = new THREE.Mesh(new THREE.BoxGeometry(length, height, width), jawMaterial);
+          jaw.position.set(centerX, radial * Math.sin(angle), radial * Math.cos(angle));
+          jaw.rotation.x = -(angle - Math.PI / 2);
+          jawGroup.add(jaw);
+        }
+        renderer.domElement.dataset.jawGripMm = String(jaws.gripLengthMm);
+        renderer.domElement.dataset.jawHeightMm = String(jaws.jawHeightMm);
+        render();
       },
       /** Move only the tool (no mesh rebuild); `null` returns it to the resolved block tip. */
       setToolPosition(position: Position | null) {

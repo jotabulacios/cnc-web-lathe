@@ -1,6 +1,7 @@
 import type { Setup, ToolId, ToolOffset } from './contract.ts';
 import { MAX_NOSE_RADIUS_MM, MAX_OFFSET_MM, toolIdSchema } from './contract.ts';
 import type { IsoTools } from './isoTools.ts';
+import { DEFAULT_JAW_HEIGHT_MM, resolvedJaws } from './chuck.ts';
 
 /** Offset table fields as typed text; X values are DIAMETER, like the program. */
 export const OFFSET_FIELDS = ['calibrationErrorX', 'calibrationErrorZ', 'wearX', 'wearZ', 'noseRadius'] as const;
@@ -21,6 +22,9 @@ export type SetupDraft = {
   offsets?: OffsetsDraft;
   /** Display-only ISO designations per station; never part of the engine setup. */
   isoTools?: IsoTools;
+  /** Nominal chuck jaws (mm). Both absent = engine defaults, as in older projects. */
+  gripLength?: string;
+  jawHeight?: string;
 };
 export type SetupErrors = Partial<Record<keyof SetupDraft | ReturnType<typeof offsetErrorKey>, string>>;
 const NUMBER = /^[+-]?(?:\d+(?:[.,]\d*)?|[.,]\d+)$/;
@@ -33,6 +37,7 @@ export function draftFromSetup(setup: Setup): SetupDraft {
     initialX: String(setup.initialPosition.rMm * 2),
     initialZ: String(setup.initialPosition.zMm),
     toolId: setup.toolId,
+    ...(setup.jaws === undefined ? {} : { gripLength: String(setup.jaws.gripLengthMm), jawHeight: String(setup.jaws.jawHeightMm) }),
     ...(setup.toolOffsets === undefined ? {} : { offsets: Object.fromEntries(setup.toolOffsets.map(row => [row.toolId, {
       calibrationErrorX: String(row.calibrationErrorXMm), calibrationErrorZ: String(row.calibrationErrorZMm),
       wearX: String(row.wearXMm), wearZ: String(row.wearZMm), noseRadius: String(row.noseRadiusMm ?? 0),
@@ -86,6 +91,7 @@ export function validateSetupDraft(draft: SetupDraft): { setup: Setup | null; er
   if (!errors.innerDiameter && !errors.diameter && numbers.innerDiameter >= numbers.diameter) {
     errors.innerDiameter = 'El diámetro interior debe ser menor que el exterior.';
   }
+  const jaws = validateJaws(draft, numbers.length, errors);
   const toolParsed = toolIdSchema.safeParse(draft.toolId);
   if (draft.toolId !== undefined && !toolParsed.success) errors.toolId = 'Elegí una herramienta del catálogo.';
   const toolId = toolParsed.success ? toolParsed.data : 'generic-od';
@@ -101,6 +107,28 @@ export function validateSetupDraft(draft: SetupDraft): { setup: Setup | null; er
       },
       initialPosition: { rMm: numbers.initialX / 2, zMm: numbers.initialZ },
       ...(toolOffsets.length ? { toolOffsets } : {}),
+      ...(jaws ? { jaws } : {}),
     },
   };
+}
+
+/** Typed jaw fields; an untouched pair keeps the setup without `jaws` (engine defaults). */
+function validateJaws(draft: SetupDraft, lengthMm: number, errors: SetupErrors) {
+  if (draft.gripLength === undefined && draft.jawHeight === undefined) return undefined;
+  const fallback = resolvedJaws({ stock: { diameterMm: 1, lengthMm: Number.isFinite(lengthMm) && lengthMm > 0 ? lengthMm : 1 } });
+  const parse = (text: string | undefined, standard: number) => {
+    const trimmed = (text ?? String(standard)).trim();
+    return { trimmed, value: Number(trimmed.replace(',', '.')) };
+  };
+  const grip = parse(draft.gripLength, fallback.gripLengthMm);
+  const height = parse(draft.jawHeight, DEFAULT_JAW_HEIGHT_MM);
+  if (!NUMBER.test(grip.trimmed) || !Number.isFinite(grip.value) || grip.value < 0) {
+    errors.gripLength = 'Ingresá un largo de 0 mm o más.';
+  } else if (!errors.length && grip.value >= lengthMm) {
+    errors.gripLength = 'Las mordazas no pueden tomar todo el largo de la pieza.';
+  }
+  if (!NUMBER.test(height.trimmed) || !Number.isFinite(height.value) || height.value <= 0 || height.value > 1e9) {
+    errors.jawHeight = 'La altura debe ser mayor que cero.';
+  }
+  return { gripLengthMm: grip.value === 0 ? 0 : grip.value, jawHeightMm: height.value };
 }

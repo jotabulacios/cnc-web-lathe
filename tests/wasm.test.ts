@@ -1,7 +1,9 @@
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { test } from 'node:test';
-import { resultSchema, defaultSetup, type CompileRequest } from '../src/lib/lathe/contract.ts';
+import { resultSchema, defaultSetup, setupSchema, type CompileRequest } from '../src/lib/lathe/contract.ts';
+import { TOOL_ASSEMBLIES, partOutline } from '../src/lib/lathe/toolAssemblies.ts';
+import { DEFAULT_JAW_GRIP_MM, DEFAULT_JAW_HEIGHT_MM, resolvedJaws } from '../src/lib/lathe/chuck.ts';
 const moduleUrl=new URL('../public/wasm/v1/cnc_wasm.js',import.meta.url).href;
 const wasm=await import(moduleUrl);
 await wasm.default({module_or_path:readFileSync(new URL('../public/wasm/v1/cnc_wasm_bg.wasm',import.meta.url))});
@@ -531,7 +533,8 @@ test('TOOL_WORKING_ANGLE crosses the JS boundary as a warning; the program stays
   for(const result of [wasm.compile(request(oldArc)),wasm.compile_v2(v2)].map(r=>resultSchema.parse(r))){
     assert.equal(result.executable,true);
     assert.equal(result.motions.length,4);
-    assert.equal(result.diagnostics.length,1);
+    // The same block also drives the finishing holder into the rounding (TOOL_HOLDER_COLLISION).
+    assert.deepEqual(result.diagnostics.map(d=>d.code),['TOOL_WORKING_ANGLE','TOOL_HOLDER_COLLISION']);
     const [warning]=result.diagnostics;
     assert.equal(warning.code,'TOOL_WORKING_ANGLE');
     assert.equal(warning.severity,'warning');
@@ -545,4 +548,42 @@ test('TOOL_WORKING_ANGLE crosses the JS boundary as a warning; the program stays
     assert.equal(result.executable,true,file);
     assert.deepEqual(result.diagnostics,[],file);
   }
+});
+
+test('Rust collision silhouettes match the drawn TS assemblies point by point',()=>{
+  const model=wasm.collision_model() as { tools:{ toolId:keyof typeof TOOL_ASSEMBLIES; parts:{ role:string; outline:[number,number][] }[]; cuttingZone:[number,number][] }[];
+    defaultJaws:{ gripLengthMm:number; jawHeightMm:number }; stepMm:number; toleranceMm:number };
+  assert.deepEqual(model.tools.map(t=>t.toolId).sort(),Object.keys(TOOL_ASSEMBLIES).sort());
+  for(const tool of model.tools){
+    const parts=TOOL_ASSEMBLIES[tool.toolId].parts;
+    assert.equal(tool.parts.length,parts.length,tool.toolId);
+    for(const [i,part] of parts.entries()){
+      assert.equal(tool.parts[i].role,part.role,tool.toolId);
+      const outline=partOutline(part);
+      assert.equal(tool.parts[i].outline.length,outline.length,tool.toolId);
+      for(const [j,[z,r]] of outline.entries()){
+        assert.ok(Math.abs(tool.parts[i].outline[j][0]-z)<1e-9&&Math.abs(tool.parts[i].outline[j][1]-r)<1e-9,`${tool.toolId} part ${i} point ${j}`);
+      }
+    }
+  }
+  assert.deepEqual(model.defaultJaws,{gripLengthMm:DEFAULT_JAW_GRIP_MM,jawHeightMm:DEFAULT_JAW_HEIGHT_MM});
+  assert.equal(model.stepMm,0.25);
+});
+
+test('collision warnings cross the JS boundary with their point and honour the setup jaws',()=>{
+  const intoJaws='G21 G18 G98\nT0101\nS800 M03\nG00 X44 Z2\nG01 Z-90 F150\nG00 X60\nZ5\nM05\nM30\n';
+  const result=resultSchema.parse(wasm.compile_v2({...request(intoJaws),apiVersion:2,dialect:'edu-lathe-v2'}));
+  assert.equal(result.executable,true);
+  const [hit]=result.diagnostics;
+  assert.equal(hit.code,'JAW_COLLISION');
+  assert.equal(hit.severity,'warning');
+  assert.equal(hit.span.line,5);
+  assert.ok(hit.point&&hit.point.zMm<-85);
+  // Same defaults on both sides; an explicit shallow grip clears it.
+  assert.deepEqual(resolvedJaws(defaultSetup),{gripLengthMm:15,jawHeightMm:12});
+  const shallow=setupSchema.parse({...defaultSetup,jaws:{gripLengthMm:5,jawHeightMm:10}});
+  const clear=resultSchema.parse(wasm.compile({...request(intoJaws),setup:shallow}));
+  assert.deepEqual(clear.diagnostics,[]);
+  assert.throws(()=>wasm.compile({...request(intoJaws),setup:{...defaultSetup,jaws:{gripLengthMm:5,jawHeightMm:10,extra:1}}}));
+  assert.equal(setupSchema.safeParse({...defaultSetup,jaws:{gripLengthMm:100,jawHeightMm:10}}).success,false);
 });

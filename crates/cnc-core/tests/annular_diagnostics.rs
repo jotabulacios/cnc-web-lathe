@@ -43,6 +43,7 @@ fn request(item: &Value, source: &str) -> (CompileRequest, f64) {
                 },
                 tool_id: setup.tool_id,
                 tool_offsets: None,
+                jaws: None,
             },
         },
         inner_diameter_mm,

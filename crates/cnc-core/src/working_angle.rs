@@ -122,7 +122,16 @@ fn point_in_stock(r: f64, z: f64, stock: &Stock) -> bool {
 }
 
 /// Engaged feed directions (degrees) that fall in a forbidden sector.
-fn violations(motion: &Motion, sectors: &[(f64, f64)], stock: &Stock) -> Vec<f64> {
+/// `engaged` is the remaining-material verdict for this motion when known.
+fn violations(
+    motion: &Motion,
+    sectors: &[(f64, f64)],
+    stock: &Stock,
+    engaged: Option<bool>,
+) -> Vec<f64> {
+    if engaged == Some(false) {
+        return Vec::new();
+    }
     let (from, to) = (motion.from, motion.to);
     match motion.arc {
         None => {
@@ -131,7 +140,8 @@ fn violations(motion: &Motion, sectors: &[(f64, f64)], stock: &Stock) -> Vec<f64
                 return Vec::new();
             }
             let direction = normalize_deg(dr.atan2(dz).to_degrees());
-            if sectors.iter().any(|&s| in_sector(direction, s)) && segment_engages(from, to, stock)
+            if sectors.iter().any(|&s| in_sector(direction, s))
+                && engaged.unwrap_or_else(|| segment_engages(from, to, stock))
             {
                 vec![direction]
             } else {
@@ -233,8 +243,15 @@ fn message(envelope: &ToolEnvelope, directions: &[f64], is_arc: bool) -> String 
 }
 
 /// One warning per block whose feed motions cut outside the tool envelope while
-/// crossing the initial stock. Rapids and ideal tools are not checked.
-pub(crate) fn check(result: &CompileResult, stock: &Stock) -> Vec<Diagnostic> {
+/// in contact with material. `engaged[motion.id]` is Some when the exterior
+/// remaining-material model decided contact (Some(false) = air over an already
+/// removed zone); None falls back to the initial stock. Rapids and ideal tools
+/// are not checked.
+pub(crate) fn check(
+    result: &CompileResult,
+    stock: &Stock,
+    engaged: &[Option<bool>],
+) -> Vec<Diagnostic> {
     let mut diagnostics: Vec<Diagnostic> = Vec::new();
     let mut warned_block = None;
     for motion in &result.motions {
@@ -244,7 +261,12 @@ pub(crate) fn check(result: &CompileResult, stock: &Stock) -> Vec<Diagnostic> {
         let Some(envelope) = envelope(&motion.tool_id) else {
             continue;
         };
-        let directions = violations(motion, &forbidden_sectors(envelope), stock);
+        let directions = violations(
+            motion,
+            &forbidden_sectors(envelope),
+            stock,
+            engaged.get(motion.id).copied().flatten(),
+        );
         if directions.is_empty() {
             continue;
         }
@@ -254,6 +276,7 @@ pub(crate) fn check(result: &CompileResult, stock: &Stock) -> Vec<Diagnostic> {
             severity: Severity::Warning,
             span: motion.span,
             message: message(envelope, &directions, motion.arc.is_some()),
+            point: None,
         });
     }
     diagnostics

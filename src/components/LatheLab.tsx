@@ -25,6 +25,8 @@ import { explainBlock, motionShortLabel } from '../lib/lathe/explain';
 import { draftFromSetup, validateSetupDraft, type SetupDraft } from '../lib/lathe/setup';
 import { getToolDefinition, TOOL_CATALOGUE } from '../lib/lathe/tools';
 import { maxAnimationMs } from '../lib/lathe/motionAnimation';
+import { resolvedJaws } from '../lib/lathe/chuck';
+import type { CollisionMarker } from './LatheViewport';
 import { useBlockAnimation } from './useToolAnimation';
 
 const fields: { key: Exclude<keyof SetupDraft,'toolId'|'offsets'|'isoTools'>; label: string; help: string }[] = [
@@ -33,6 +35,8 @@ const fields: { key: Exclude<keyof SetupDraft,'toolId'|'offsets'|'isoTools'>; la
   { key: 'length', label: 'Longitud de la pieza', help: 'mm' },
   { key: 'initialX', label: 'X inicial de la herramienta', help: 'Ø mm' },
   { key: 'initialZ', label: 'Z inicial de la herramienta', help: 'mm' },
+  { key: 'gripLength', label: 'Largo tomado por las mordazas', help: 'mm' },
+  { key: 'jawHeight', label: 'Altura de las mordazas sobre la pieza', help: 'mm' },
 ];
 type TabId = 'programa' | 'pieza' | 'herramientas' | 'explicacion' | 'practicas';
 const TABS: { id: TabId; label: string }[] = [
@@ -116,6 +120,13 @@ export default function LatheLab({ initialSource, exercises }: { initialSource: 
   const canPlay = canStep && !profileError && geometry?.complete === true && cursor < total;
   const canCompile = status !== 'loading' && validation.setup !== null;
   const diagnostics = result?.diagnostics ?? [];
+  const jaws = resolvedJaws(setup);
+  // Collision points of executed blocks (the warning's span is its block).
+  const collisionMarkers: CollisionMarker[] = diagnostics.flatMap(d => {
+    if (!d.point || !(d.code === 'TOOL_HOLDER_COLLISION' || d.code === 'JAW_COLLISION')) return [];
+    const block = result?.blocks.findIndex(b => b.span.line === d.span.line) ?? -1;
+    return block >= 0 && block < cursor ? [{ code: d.code, line: d.span.line, zMm: d.point.zMm, rMm: d.point.rMm }] : [];
+  });
   const errors = diagnostics.filter(d => d.severity === 'error').length;
   const activeExercise = exercises.find(e => e.id === activeExerciseId);
   const exerciseAssessment = activeExercise ? assessPractice(activeExercise, { source, setup: validation.setup,
@@ -257,8 +268,8 @@ export default function LatheLab({ initialSource, exercises }: { initialSource: 
       </div>
       {/* Fixed child slots: switching to/from split keeps the mounted 2D/3D instances (camera, single WebGL context). */}
       <div className={`stage-view${viewMode === 'split' ? ' is-split' : ''}`} data-view-mode={viewMode}>
-        {viewMode !== '3d' && <LatheViewport motions={result?.motions ?? []} cursor={cursor} position={tipPosition} stock={setup.stock} showToolpath={showToolpath} profile={geometry?.spans.length ? geometry : null} toolId={activeToolId} assemblies={assemblies} animation={toolAnimation}/>}
-        {viewMode !== '2d' && <LatheThreeView stock={setup.stock} profile={geometry} position={tipPosition} toolId={activeToolId} section={section3d} onSectionChange={setSection3d} projection={projection} onProjectionChange={setProjection} assembly={assemblies[activeTool.id]} blocked={Boolean(result?.executable && (profileBusy || profileError || !geometry?.spans.length))} onReturn2D={() => setViewMode('2d')} animation={toolAnimation}/>}
+        {viewMode !== '3d' && <LatheViewport motions={result?.motions ?? []} cursor={cursor} position={tipPosition} stock={setup.stock} showToolpath={showToolpath} profile={geometry?.spans.length ? geometry : null} toolId={activeToolId} assemblies={assemblies} animation={toolAnimation} jaws={jaws} collisions={collisionMarkers}/>}
+        {viewMode !== '2d' && <LatheThreeView stock={setup.stock} profile={geometry} position={tipPosition} toolId={activeToolId} section={section3d} onSectionChange={setSection3d} projection={projection} onProjectionChange={setProjection} assembly={assemblies[activeTool.id]} blocked={Boolean(result?.executable && (profileBusy || profileError || !geometry?.spans.length))} onReturn2D={() => setViewMode('2d')} animation={toolAnimation} jaws={jaws}/>}
       </div>
       <div className={`profile-readout ${geometry && !geometry.complete ? 'partial' : ''}`} data-profile-complete={geometry?.complete} data-profile-blocks={geometry?.evaluatedBlocks}>
         <span role="status" data-testid="profile-status">{!result?.executable ? 'Interpretá el programa para calcular el perfil.'
@@ -321,7 +332,7 @@ export default function LatheLab({ initialSource, exercises }: { initialSource: 
         <div className="setup-form" id="setup-form">
           <div className="setup-fields">{fields.map(field => <div className="setup-field" key={field.key}>
             <label htmlFor={`setup-${field.key}`}>{field.label}</label>
-            <div className="input-unit"><input id={`setup-${field.key}`} value={draft[field.key] ?? '0'} onChange={e => changeSetup(field.key, e.target.value)} inputMode="decimal" autoComplete="off" aria-invalid={Boolean(validation.errors[field.key])} aria-describedby={validation.errors[field.key] ? `error-${field.key}` : undefined}/><span>{field.help}</span></div>
+            <div className="input-unit"><input id={`setup-${field.key}`} value={draft[field.key] ?? (field.key === 'gripLength' ? String(jaws.gripLengthMm) : field.key === 'jawHeight' ? String(jaws.jawHeightMm) : '0')} onChange={e => changeSetup(field.key, e.target.value)} inputMode="decimal" autoComplete="off" aria-invalid={Boolean(validation.errors[field.key])} aria-describedby={validation.errors[field.key] ? `error-${field.key}` : undefined}/><span>{field.help}</span></div>
             {validation.errors[field.key] && <p className="field-error" id={`error-${field.key}`}>{validation.errors[field.key]}</p>}
           </div>)}
           <div className="setup-field setup-tool-field"><label htmlFor="setup-tool">Herramienta inicial</label>
@@ -336,7 +347,7 @@ export default function LatheLab({ initialSource, exercises }: { initialSource: 
             const guided = exercises.find(exercise => exercise.id === 'boring-and-turning');
             if (guided) loadExercise(guided);
           }}>Cargar ejemplo de mandrinado</button>
-          <p className="setup-note">Interior Ø0 indica sólido. Un tubo requiere un agujero existente; T5 es mandrinado. Z0 está en la cara frontal y Z negativo va hacia el plato. Al cambiar una medida o herramienta, volvé a interpretar el programa.{!validation.setup && ' La vista conserva la última configuración válida.'}</p>
+          <p className="setup-note">Interior Ø0 indica sólido. Un tubo requiere un agujero existente; T5 es mandrinado. Z0 está en la cara frontal y Z negativo va hacia el plato. Las mordazas son nominales: toman la pieza desde el plato y el motor avisa si la herramienta, el mango o el inserto entran en esa zona o tocan el material que queda (aviso educativo, no una garantía de seguridad). Al cambiar una medida o herramienta, volvé a interpretar el programa.{!validation.setup && ' La vista conserva la última configuración válida.'}</p>
         </div>
         <div className="sheet-launch"><button onClick={() => setSheetOpen(true)} disabled={!geometry?.spans.length}>Hoja de cotas</button><span>{geometry?.spans.length ? `${sheetStatus} · dibujo con cotas de la pieza obtenida` : 'Interpretá el programa para dibujar la pieza.'}</span></div>
         <details className="profile-details"><summary>Modelo de corte y medidas del perfil</summary><p>En sólidos: cilindrado, conos y arcos exteriores hacia Z negativo; refrentado frontal G01 hasta X0. En tubos: G00/G01 longitudinales y T5 desde un agujero existente; refrentado exterior completo hasta el agujero. El corte requiere husillo encendido y S mayor que cero; los rápidos no remueven material. Los arcos se aproximan con cuerdas de tolerancia perpendicular 0,01 mm. La herramienta corta con punta ideal o con el radio de punta de la tabla.</p>

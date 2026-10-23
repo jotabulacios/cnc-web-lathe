@@ -3,8 +3,8 @@ use crate::linear_profile::{
     GeometryBudget, GeometryError, LinearProfile, LinearProfileSpan, checked_difference,
 };
 use crate::{
-    ArcGeometry, CompileResult, Diagnostic, MAX_MAGNITUDE, MotionKind, Position, Severity,
-    SourceSpan, Stock,
+    ArcGeometry, Block, CompileResult, Diagnostic, MAX_MAGNITUDE, Motion, MotionKind, Position,
+    Severity, SourceSpan, Stock,
 };
 use serde::Serialize;
 
@@ -26,7 +26,7 @@ pub struct StockProfileV2 {
     pub diagnostics: Vec<Diagnostic>,
 }
 
-enum ProfileError {
+pub(crate) enum ProfileError {
     Geometry(GeometryError),
     Invalid,
     Rapid,
@@ -84,6 +84,7 @@ fn diagnostic(error: ProfileError, span: SourceSpan) -> Diagnostic {
         severity: Severity::Warning,
         span,
         message: message.into(),
+        point: None,
     }
 }
 
@@ -294,6 +295,138 @@ fn arc_linear_spans(
     Ok(spans)
 }
 
+/// Apply one interpreted motion to the exterior profile: `Ok(None)` when it stays
+/// in air, `Ok(Some(next))` when it removes material, `Err` when this model must
+/// freeze before the block. Shared with the educational collision check.
+pub(crate) fn step_motion(
+    base: &LinearProfile,
+    motion: &Motion,
+    block: &Block,
+    stock: &Stock,
+    budget: &mut GeometryBudget,
+) -> Result<Option<LinearProfile>, ProfileError> {
+    // Arcs are flattened into monotonic linear spans with a bounded
+    // chord tolerance. Non-monotonic arcs cannot be represented by
+    // z -> r spans, so the profile freezes instead of guessing.
+    if motion.kind.is_arc() {
+        let arc = motion.arc.ok_or(ProfileError::Invalid)?;
+        if arc.clockwise != (motion.kind == MotionKind::ArcCw) {
+            return Err(ProfileError::Invalid);
+        }
+        if !arc_penetrates(base, motion.from, motion.to, &arc, budget)? {
+            return Ok(None);
+        }
+        if !block.after_state.spindle_on
+            || !block.after_state.spindle_rpm.is_finite()
+            || block.after_state.spindle_rpm <= 0.0
+        {
+            return Err(ProfileError::Spindle);
+        }
+        if motion.to.z_mm >= motion.from.z_mm {
+            return Err(ProfileError::Unsupported);
+        }
+        let spans = arc_linear_spans(motion.from, motion.to, &arc)?;
+        let mut working: Option<LinearProfile> = None;
+        let mut removed = false;
+        for span in spans {
+            let start = Position {
+                r_mm: span.r_start_mm,
+                z_mm: span.z_start_mm,
+            };
+            let end = Position {
+                r_mm: span.r_end_mm,
+                z_mm: span.z_end_mm,
+            };
+            let touches = match &working {
+                Some(profile) => profile.penetrates(start, end, budget)?,
+                None => base.penetrates(start, end, budget)?,
+            };
+            if !touches {
+                continue;
+            }
+            removed = true;
+            if !block.after_state.spindle_on
+                || !block.after_state.spindle_rpm.is_finite()
+                || block.after_state.spindle_rpm <= 0.0
+            {
+                return Err(ProfileError::Spindle);
+            }
+            if motion.to.z_mm >= motion.from.z_mm {
+                return Err(ProfileError::Unsupported);
+            }
+            working = Some(match working.take() {
+                Some(profile) => profile.cut(&span, budget)?,
+                None => base.cut(&span, budget)?,
+            });
+        }
+        if !removed {
+            // The true arc removes material, but every bounded chord
+            // is in air. Do not silently lose a sub-tolerance cut.
+            return Err(ProfileError::Geometry(GeometryError::AmbiguousComparison));
+        }
+        return Ok(working);
+    }
+    if motion.from.z_mm == motion.to.z_mm {
+        let z_cut = motion.from.z_mm;
+        let is_facing = motion.kind == MotionKind::Linear
+            && motion.from.r_mm > motion.to.r_mm
+            && motion.to.r_mm == 0.0;
+        if is_facing && z_cut > -stock.length_mm && z_cut <= 0.0 {
+            let max_r = base.max_radius_in(z_cut, 0.0, budget)?;
+            if max_r == 0.0 {
+                return Ok(None);
+            }
+            if !block.after_state.spindle_on
+                || !block.after_state.spindle_rpm.is_finite()
+                || block.after_state.spindle_rpm <= 0.0
+            {
+                return Err(ProfileError::Spindle);
+            }
+            if checked_difference(motion.from.r_mm, max_r)? < 0.0 {
+                return Err(ProfileError::Unsupported);
+            }
+            return Ok(Some(base.face_to(z_cut, budget)?));
+        }
+        if !base.penetrates(motion.from, motion.to, budget)? {
+            return Ok(None);
+        }
+        if motion.lead {
+            return Err(ProfileError::Lead);
+        }
+        if motion.kind == MotionKind::Rapid {
+            return Err(ProfileError::Rapid);
+        }
+        return Err(ProfileError::Unsupported);
+    }
+    if !base.penetrates(motion.from, motion.to, budget)? {
+        return Ok(None);
+    }
+    if motion.lead {
+        return Err(ProfileError::Lead);
+    }
+    if motion.kind == MotionKind::Rapid {
+        return Err(ProfileError::Rapid);
+    }
+    if !block.after_state.spindle_on
+        || !block.after_state.spindle_rpm.is_finite()
+        || block.after_state.spindle_rpm <= 0.0
+    {
+        return Err(ProfileError::Spindle);
+    }
+    if motion.to.z_mm >= motion.from.z_mm {
+        return Err(ProfileError::Unsupported);
+    }
+    Ok(Some(base.cut(
+        &LinearProfileSpan {
+            z_start_mm: motion.to.z_mm,
+            z_end_mm: motion.from.z_mm,
+            r_start_mm: motion.to.r_mm,
+            r_end_mm: motion.from.r_mm,
+        },
+        budget,
+    )?))
+}
+
 /// Reconstruct an ideal point-tool exterior from a block prefix, including tapers.
 /// The interpreter owns all modal semantics. Unsupported/ambiguous blocks freeze
 /// geometry before the whole block, independently of the UI execution cursor.
@@ -355,6 +488,7 @@ pub fn profile_at_v2(
             span: fallback,
             message: "La posición inicial está dentro del material; el perfil queda congelado."
                 .into(),
+            point: None,
         });
         return result;
     }
@@ -377,128 +511,9 @@ pub fn profile_at_v2(
                     return Err(ProfileError::Invalid);
                 }
                 let base = candidate.as_ref().unwrap_or(&geometry);
-                // Arcs are flattened into monotonic linear spans with a bounded
-                // chord tolerance. Non-monotonic arcs cannot be represented by
-                // z -> r spans, so the profile freezes instead of guessing.
-                if motion.kind.is_arc() {
-                    let arc = motion.arc.ok_or(ProfileError::Invalid)?;
-                    if arc.clockwise != (motion.kind == MotionKind::ArcCw) {
-                        return Err(ProfileError::Invalid);
-                    }
-                    if !arc_penetrates(base, motion.from, motion.to, &arc, &mut budget)? {
-                        continue;
-                    }
-                    if !block.after_state.spindle_on
-                        || !block.after_state.spindle_rpm.is_finite()
-                        || block.after_state.spindle_rpm <= 0.0
-                    {
-                        return Err(ProfileError::Spindle);
-                    }
-                    if motion.to.z_mm >= motion.from.z_mm {
-                        return Err(ProfileError::Unsupported);
-                    }
-                    let spans = arc_linear_spans(motion.from, motion.to, &arc)?;
-                    let mut working: Option<LinearProfile> = None;
-                    let mut removed = false;
-                    for span in spans {
-                        let start = Position {
-                            r_mm: span.r_start_mm,
-                            z_mm: span.z_start_mm,
-                        };
-                        let end = Position {
-                            r_mm: span.r_end_mm,
-                            z_mm: span.z_end_mm,
-                        };
-                        let touches = match &working {
-                            Some(profile) => profile.penetrates(start, end, &mut budget)?,
-                            None => base.penetrates(start, end, &mut budget)?,
-                        };
-                        if !touches {
-                            continue;
-                        }
-                        removed = true;
-                        if !block.after_state.spindle_on
-                            || !block.after_state.spindle_rpm.is_finite()
-                            || block.after_state.spindle_rpm <= 0.0
-                        {
-                            return Err(ProfileError::Spindle);
-                        }
-                        if motion.to.z_mm >= motion.from.z_mm {
-                            return Err(ProfileError::Unsupported);
-                        }
-                        working = Some(match working.take() {
-                            Some(profile) => profile.cut(&span, &mut budget)?,
-                            None => base.cut(&span, &mut budget)?,
-                        });
-                    }
-                    if !removed {
-                        // The true arc removes material, but every bounded chord
-                        // is in air. Do not silently lose a sub-tolerance cut.
-                        return Err(ProfileError::Geometry(GeometryError::AmbiguousComparison));
-                    }
-                    candidate = working;
-                    continue;
+                if let Some(next) = step_motion(base, motion, block, stock, &mut budget)? {
+                    candidate = Some(next);
                 }
-                if motion.from.z_mm == motion.to.z_mm {
-                    let z_cut = motion.from.z_mm;
-                    let is_facing = motion.kind == MotionKind::Linear
-                        && motion.from.r_mm > motion.to.r_mm
-                        && motion.to.r_mm == 0.0;
-                    if is_facing && z_cut > -stock.length_mm && z_cut <= 0.0 {
-                        let max_r = base.max_radius_in(z_cut, 0.0, &mut budget)?;
-                        if max_r == 0.0 {
-                            continue;
-                        }
-                        if !block.after_state.spindle_on
-                            || !block.after_state.spindle_rpm.is_finite()
-                            || block.after_state.spindle_rpm <= 0.0
-                        {
-                            return Err(ProfileError::Spindle);
-                        }
-                        if checked_difference(motion.from.r_mm, max_r)? < 0.0 {
-                            return Err(ProfileError::Unsupported);
-                        }
-                        candidate = Some(base.face_to(z_cut, &mut budget)?);
-                        continue;
-                    }
-                    if !base.penetrates(motion.from, motion.to, &mut budget)? {
-                        continue;
-                    }
-                    if motion.lead {
-                        return Err(ProfileError::Lead);
-                    }
-                    if motion.kind == MotionKind::Rapid {
-                        return Err(ProfileError::Rapid);
-                    }
-                    return Err(ProfileError::Unsupported);
-                }
-                if !base.penetrates(motion.from, motion.to, &mut budget)? {
-                    continue;
-                }
-                if motion.lead {
-                    return Err(ProfileError::Lead);
-                }
-                if motion.kind == MotionKind::Rapid {
-                    return Err(ProfileError::Rapid);
-                }
-                if !block.after_state.spindle_on
-                    || !block.after_state.spindle_rpm.is_finite()
-                    || block.after_state.spindle_rpm <= 0.0
-                {
-                    return Err(ProfileError::Spindle);
-                }
-                if motion.to.z_mm >= motion.from.z_mm {
-                    return Err(ProfileError::Unsupported);
-                }
-                candidate = Some(base.cut(
-                    &LinearProfileSpan {
-                        z_start_mm: motion.to.z_mm,
-                        z_end_mm: motion.from.z_mm,
-                        r_start_mm: motion.to.r_mm,
-                        r_end_mm: motion.from.r_mm,
-                    },
-                    &mut budget,
-                )?);
             }
             Ok(())
         })();

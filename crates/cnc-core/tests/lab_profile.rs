@@ -19,6 +19,7 @@ fn request(source: &str, tool_id: &str) -> CompileRequest {
             },
             tool_id: tool_id.into(),
             tool_offsets: None,
+            jaws: None,
         },
     }
 }

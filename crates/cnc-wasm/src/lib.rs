@@ -110,3 +110,12 @@ fn profile_request(request: JsValue, linear: bool) -> Result<JsValue, JsValue> {
     };
     result.map_err(|error| JsValue::from_str(&format!("SERIALIZATION_ERROR: {error}")))
 }
+
+/// Nominal collision geometry (tool silhouettes, cutting zones, jaw defaults),
+/// so the display can be checked against the geometry the diagnostics use.
+#[wasm_bindgen]
+pub fn collision_model() -> Result<JsValue, JsValue> {
+    cnc_core::collisions::collision_model()
+        .serialize(&serde_wasm_bindgen::Serializer::json_compatible())
+        .map_err(|e| JsValue::from_str(&format!("SERIALIZATION_ERROR: {e}")))
+}

@@ -631,6 +631,7 @@ fn rewrite(
                                 severity: Severity::Warning,
                                 span: m.span,
                                 message: "Con radio de punta, el refrentado hasta X0 deja un pequeño cono en el centro que este modelo no representa.".into(),
+                                point: None,
                             });
                         }
                         Piece {

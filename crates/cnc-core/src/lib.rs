@@ -1,6 +1,7 @@
 //! Educational lathe interpreter. Coordinates are physical radii and axial mm.
 //! No web, renderer, clock, filesystem, or machine-control dependencies.
 pub mod annular_profile;
+pub mod collisions;
 mod cycles;
 mod interpreter;
 mod lab_profile;

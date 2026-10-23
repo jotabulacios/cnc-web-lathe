@@ -114,6 +114,7 @@ fn guided_annular_catalogue_matches_native_prefixes_and_independent_material_ref
                 },
                 tool_id: exercise.setup.tool_id,
                 tool_offsets: None,
+                jaws: None,
             },
         };
         let program = compile_v2(&request);

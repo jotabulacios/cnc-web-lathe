@@ -29,6 +29,20 @@ pub struct Setup {
     /// edu-lathe-v2 only; v1 rejects a table instead of ignoring it (null = absent).
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tool_offsets: Option<Vec<crate::ToolOffset>>,
+    /// Nominal chuck jaws for the educational collision check (absent = defaults).
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub jaws: Option<ChuckJaws>,
+}
+
+/// Nominal chuck jaws gripping the raw stock from the chuck end (Z = −length).
+/// Educational obstacle only; it never changes the remaining material.
+#[derive(Clone, Copy, Debug, Deserialize, Serialize, PartialEq)]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
+pub struct ChuckJaws {
+    /// Stock length held inside the jaws, from Z = −length toward the face. 0 = only the chuck face.
+    pub grip_length_mm: f64,
+    /// Radial height of the jaws above the raw stock diameter.
+    pub jaw_height_mm: f64,
 }
 
 #[derive(Clone, Debug, Deserialize, Serialize)]
@@ -63,6 +77,9 @@ pub struct Diagnostic {
     pub severity: Severity,
     pub span: SourceSpan,
     pub message: String,
+    /// Optional location in the Z/R plane (physical radius), e.g. a collision point.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub point: Option<Position>,
 }
 
 impl Diagnostic {
@@ -72,6 +89,7 @@ impl Diagnostic {
             severity: Severity::Error,
             span,
             message: message.into(),
+            point: None,
         }
     }
 }

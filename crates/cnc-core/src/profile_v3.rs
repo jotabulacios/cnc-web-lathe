@@ -22,6 +22,7 @@ fn warning(code: &str, span: SourceSpan, message: &str) -> Diagnostic {
         severity: Severity::Warning,
         span,
         message: message.into(),
+        point: None,
     }
 }
 

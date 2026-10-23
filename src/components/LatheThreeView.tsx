@@ -9,6 +9,7 @@ import { getToolDefinition } from '../lib/lathe/tools';
 import { TOOL_ASSEMBLIES, type DisplayAssembly } from '../lib/lathe/toolAssemblies';
 import { positionAtElapsed } from '../lib/lathe/motionAnimation';
 import type { ToolAnimation } from './useToolAnimation';
+import { resolvedJaws, type ChuckJaws } from '../lib/lathe/chuck';
 
 type Props = {
   stock: { diameterMm: number; lengthMm: number; innerDiameterMm?: number };
@@ -24,13 +25,17 @@ type Props = {
   onReturn2D: () => void;
   /** Presentation-only travel for the last forward step; moves the tool without rebuilding the mesh. */
   animation?: ToolAnimation | null;
+  /** Nominal chuck jaws (defaults when absent). */
+  jaws?: ChuckJaws;
 };
 
-export default function LatheThreeView({ stock: { diameterMm, lengthMm, innerDiameterMm = 0 }, profile, position, toolId, blocked, section, onSectionChange, projection, onProjectionChange, assembly, onReturn2D, animation = null }: Props) {
+export default function LatheThreeView({ stock: { diameterMm, lengthMm, innerDiameterMm = 0 }, profile, position, toolId, blocked, section, onSectionChange, projection, onProjectionChange, assembly, onReturn2D, animation = null, jaws: jawsProp }: Props) {
   const host = useRef<HTMLDivElement>(null);
   const scene = useRef<ThreeScene | null>(null);
   const [attempt, setAttempt] = useState(0);
   const key = `${diameterMm}/${innerDiameterMm}/${lengthMm}/${attempt}`;
+  const jaws = jawsProp ?? resolvedJaws({ stock: { diameterMm, lengthMm } });
+  const latestJaws = useRef(jaws);
   const [state, setState] = useState({ key, status: 'loading', message: '' });
   const spans = useMemo(() => profile?.spans ?? (innerDiameterMm > 0 ? [{ zStartMm: -lengthMm, zEndMm: 0, innerStartMm: innerDiameterMm / 2, innerEndMm: innerDiameterMm / 2, outerStartMm: diameterMm / 2, outerEndMm: diameterMm / 2 }] : [{ zStartMm: -lengthMm, zEndMm: 0, rStartMm: diameterMm / 2, rEndMm: diameterMm / 2 }]), [profile, lengthMm, diameterMm, innerDiameterMm]);
   const completedBlocks = profile?.evaluatedBlocks ?? 0;
@@ -50,6 +55,7 @@ export default function LatheThreeView({ stock: { diameterMm, lengthMm, innerDia
       owned = createThreeScene(host.current, { diameterMm, lengthMm }, fail);
       scene.current = owned;
       owned.setProjection(latestProjection.current);
+      owned.setJaws(latestJaws.current);
       const l = latest.current;
       if (owned.update(l.spans, l.completedBlocks, l.position, l.toolId, l.section, l.assembly)) setState({ key, status: 'ready', message: '' });
     }).catch((error: unknown) => fail(error instanceof Error && error.message.includes('3D') ? error.message
@@ -60,6 +66,12 @@ export default function LatheThreeView({ stock: { diameterMm, lengthMm, innerDia
       if (scene.current === owned) scene.current = null;
     };
   }, [diameterMm, lengthMm, key]);
+
+  const { gripLengthMm, jawHeightMm } = jaws;
+  useEffect(() => {
+    latestJaws.current = { gripLengthMm, jawHeightMm };
+    scene.current?.setJaws(latestJaws.current);
+  }, [gripLengthMm, jawHeightMm, key]);
 
   useEffect(() => {
     latest.current = { spans, completedBlocks, position, toolId, section, assembly };

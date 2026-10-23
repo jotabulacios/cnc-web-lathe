@@ -9,6 +9,10 @@ import { profilePathV2 } from '../lib/lathe/profilePathV2';
 import { getToolDefinition, type ToolDefinition } from '../lib/lathe/tools';
 import { useAnimatedTip, type ToolAnimation } from './useToolAnimation';
 import type { DisplayAssembly } from '../lib/lathe/toolAssemblies';
+import { jawZone, resolvedJaws, type ChuckJaws } from '../lib/lathe/chuck';
+
+/** Educational collision point of an executed block (from a Rust diagnostic). */
+export type CollisionMarker = { code: string; line: number; zMm: number; rMm: number };
 
 type Props = {
   motions: CompileResult['motions'];
@@ -21,6 +25,9 @@ type Props = {
   assemblies?: AssemblyMap;
   /** Presentation-only travel of the tool for the last forward step; `position` stays the resolved tip. */
   animation?: ToolAnimation | null;
+  /** Nominal chuck jaws (defaults when absent), drawn as an obstacle. */
+  jaws?: ChuckJaws;
+  collisions?: readonly CollisionMarker[];
 };
 
 // Light technical-drawing palette: section hatch on material, dark edges.
@@ -28,6 +35,7 @@ const colors = {
   background: '#f8fafc', grid: '#e4e9ef', axis: '#7a8794', text: '#3d4a57',
   stock: '#d5dde4', stockEdge: '#2f3c49', feed: '#0f8a5f', rapid: '#c2410c',
 };
+const format = (value: number) => Number(value.toFixed(3)).toLocaleString('es-AR');
 const formatTick = (value: number) => Math.abs(value) >= 100_000
   ? value.toExponential(1).replace('.0e', 'e')
   : Number(value.toFixed(3)).toLocaleString('es-AR');
@@ -48,12 +56,14 @@ function ToolMarker({ animation, position, x, y, scale, toolDef, assembly }: Mar
   </g>;
 }
 
-export default function LatheViewport({ motions, cursor, position, stock, showToolpath, profile, toolId, assemblies = TOOL_ASSEMBLIES, animation = null }: Props) {
+export default function LatheViewport({ motions, cursor, position, stock, showToolpath, profile, toolId, assemblies = TOOL_ASSEMBLIES, animation = null, jaws: jawsProp, collisions = [] }: Props) {
   const [expanded, setExpanded] = useState(false);
   const uid = useId().replace(/:/g, '');
   const toolDef = getToolDefinition(toolId);
   const assembly = assemblies[toolDef.id];
-  const view = createLatheView(motions, position, stock, assemblyBounds(assembly), assemblies);
+  const jaws = jawsProp ?? resolvedJaws({ stock });
+  const zone = jawZone(stock, jaws);
+  const view = createLatheView(motions, position, stock, assemblyBounds(assembly), assemblies, jaws);
   const { x, y, radius, chuckDepth, scale } = view;
   const zTicks = gridTicks(view.minZ, view.maxZ, 6);
   const rTicks = gridTicks(view.minR, view.maxR, 7);
@@ -63,7 +73,10 @@ export default function LatheViewport({ motions, cursor, position, stock, showTo
   const toolLabelY = 12;
   const chuckLeft = x(-stock.lengthMm - chuckDepth);
   const chuckRight = x(-stock.lengthMm);
-  const chuckHeight = radius * 1.4;
+  const chuckHeight = Math.max(radius * 1.4, zone.outerR * 1.08);
+  // Jaws are seated in the chuck and reach forward over the gripped stock.
+  const jawLeft = chuckLeft + (chuckRight - chuckLeft) * 0.64;
+  const jawRight = x(zone.faceZ);
   const labelStyle = { fontFamily: 'inherit', fontSize: 20, fill: colors.text };
   const solidOutline = profilePathV2([{ zStartMm: -stock.lengthMm, zEndMm: 0, rStartMm: radius, rEndMm: radius }], x, y);
   const initialOutline = (stock.innerDiameterMm ?? 0) > 0 ? profilePathV3([{ zStartMm: -stock.lengthMm, zEndMm: 0,
@@ -93,9 +106,10 @@ export default function LatheViewport({ motions, cursor, position, stock, showTo
         <path d={initialOutline} fill="none" stroke={colors.stockEdge} strokeWidth="1.2" strokeDasharray={profile ? '6 5' : undefined} opacity={profile ? 0.65 : 1} aria-label="Contorno del material inicial"/>
         <g aria-label="Plato de sujeción esquemático">
           <rect x={chuckLeft} y={y(chuckHeight)} width={chuckRight - chuckLeft} height={2 * chuckHeight * scale} rx="3" fill="#cfd6dd" stroke="#5b6874"/>
-          <rect x={chuckLeft + (chuckRight - chuckLeft) * 0.64} y={y(chuckHeight * 0.86)} width={(chuckRight - chuckLeft) * 0.36 + 3} height={(chuckHeight * 0.86 - radius * 0.8) * scale} rx="1" fill="#9aa6b1" stroke="#4b5866"/>
-          <rect x={chuckLeft + (chuckRight - chuckLeft) * 0.64} y={y(-radius * 0.8)} width={(chuckRight - chuckLeft) * 0.36 + 3} height={(chuckHeight * 0.86 - radius * 0.8) * scale} rx="1" fill="#9aa6b1" stroke="#4b5866"/>
           <line x1={chuckLeft + 4} x2={chuckLeft + 4} y1={y(chuckHeight) + 8} y2={y(-chuckHeight) - 8} stroke="#5b6874" opacity="0.4"/>
+        </g>
+        <g aria-label={`Mordazas nominales: toman ${format(jaws.gripLengthMm)} mm de la pieza y sobresalen ${format(jaws.jawHeightMm)} mm`} data-testid="chuck-jaws" data-grip-mm={jaws.gripLengthMm} data-jaw-height-mm={jaws.jawHeightMm}>
+          {[1, -1].map(side => <rect key={side} x={jawLeft} y={y(side > 0 ? zone.outerR : -zone.innerR)} width={Math.max(0, jawRight - jawLeft)} height={jaws.jawHeightMm * scale} rx="1" fill="#8d99a5" fillOpacity="0.92" stroke="#3d4a57"/>)}
         </g>
         <line x1={frame.left} x2={frame.left + frame.plotWidth} y1={y(0)} y2={y(0)} stroke={colors.axis} strokeDasharray="10 5 2 5" strokeWidth="1"/>
         <line x1={x(0)} x2={x(0)} y1={frame.top} y2={frame.top + frame.plotHeight} stroke={colors.axis} strokeDasharray="3 7" opacity="0.55"/>
@@ -114,6 +128,10 @@ export default function LatheViewport({ motions, cursor, position, stock, showTo
           return <line key={motion.id} data-motion-id={motion.id} data-executed={executed} x1={x(motion.from.zMm)} y1={y(motion.from.rMm)} x2={x(motion.to.zMm)} y2={y(motion.to.rMm)} stroke={stroke} strokeWidth={executed ? 2.5 : 1.5} strokeDasharray={motion.kind === 'rapid' ? '7 5' : undefined} opacity={executed ? 1 : 0.28}/>;
         })}
         <g aria-label="Origen de pieza Z cero" stroke="#2f3c49" strokeWidth="1.2"><circle cx={x(0)} cy={y(0)} r="4" fill={colors.background}/><line x1={x(0) - 8} x2={x(0) + 8} y1={y(0)} y2={y(0)}/><line x1={x(0)} x2={x(0)} y1={y(0) - 8} y2={y(0) + 8}/></g>
+        {collisions.map((c, i) => <g key={i} data-testid="collision-marker" data-code={c.code} aria-label={`Colisión educativa ${c.code} en la línea ${c.line}: Z ${format(c.zMm)}, X ${format(c.rMm * 2)}`} stroke="#dc2626" strokeWidth="2.5">
+          <circle cx={x(c.zMm)} cy={y(c.rMm)} r="9" fill="#fee2e2" fillOpacity="0.85"/>
+          <line x1={x(c.zMm) - 5} x2={x(c.zMm) + 5} y1={y(c.rMm) - 5} y2={y(c.rMm) + 5}/><line x1={x(c.zMm) - 5} x2={x(c.zMm) + 5} y1={y(c.rMm) + 5} y2={y(c.rMm) - 5}/>
+        </g>)}
         <ToolMarker animation={animation} position={position} x={x} y={y} scale={scale} toolDef={toolDef} assembly={assembly}/>
       </g>
       {/* Outside the plot clip: the title strip never overlaps the stock. */}
@@ -137,6 +155,8 @@ export default function LatheViewport({ motions, cursor, position, stock, showTo
       <span><span aria-hidden="true" style={{ color: colors.rapid }}>┄ </span>Rápido G00</span>
       <span>Tenue: previsto · intenso: completado</span>
       <span>Herramienta educativa en mm · el punto claro indica la punta ideal</span>
+      <span><span aria-hidden="true" style={{ color: '#8d99a5' }}>▬ </span>Mordazas nominales</span>
+      {collisions.length > 0 && <span><span aria-hidden="true" style={{ color: '#dc2626' }}>⊗ </span>Colisión educativa</span>}
       {profile && <><span><span aria-hidden="true" style={{ color: colors.stockEdge }}>■ </span>Material restante</span><span><span aria-hidden="true" style={{ color: colors.rapid }}>▧ </span>Removido · modelo ideal</span></>}
       {view.largeRange && <span role="status" style={{ color: colors.rapid }}>Vista ajustada a todo el programa; el material puede verse pequeño.</span>}
     </div>

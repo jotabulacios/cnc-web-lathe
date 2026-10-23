@@ -42,6 +42,12 @@ fn setup_error(req: &CompileRequest, version: u32) -> Option<&'static str> {
             return Some(message);
         }
     }
+    if let Some(jaws) = &req.setup.jaws
+        && stock.length_mm.is_finite()
+        && let Some(message) = crate::collisions::jaws_error(jaws, stock)
+    {
+        return Some(message);
+    }
     if ![p.r_mm, p.z_mm, stock.diameter_mm, stock.length_mm]
         .iter()
         .all(|n| n.is_finite() && n.abs() <= MAX_MAGNITUDE)
@@ -690,6 +696,7 @@ fn compile_version(req: &CompileRequest, version: u32) -> CompileResult {
                         severity: Severity::Warning,
                         span,
                         message: "Bloque posterior al fin de programa: no se ejecuta.".into(),
+                        point: None,
                     }),
                 }
             }
@@ -840,7 +847,10 @@ fn compile_version(req: &CompileRequest, version: u32) -> CompileResult {
     if result.executable {
         result.final_state = Some(state);
         // Programmed path, before offsets/nose: the envelope is a tool property.
-        let warnings = crate::working_angle::check(&result, &req.setup.stock);
+        // Contact is taken from the material remaining at each motion when the
+        // exterior model reaches it, else from the initial stock.
+        let engaged = crate::collisions::exterior_engagement(&result, &req.setup);
+        let warnings = crate::working_angle::check(&result, &req.setup.stock, &engaged);
         result.diagnostics.extend(warnings);
     } else {
         result.blocks.clear();
@@ -849,6 +859,11 @@ fn compile_version(req: &CompileRequest, version: u32) -> CompileResult {
     if let Some(offsets) = &req.setup.tool_offsets {
         crate::tool_offsets::apply_tool_offsets(&mut result, offsets);
         crate::nose::apply_nose(&mut result, offsets, &req.setup.tool_id);
+    }
+    if result.executable {
+        // Final motions (offsets and nose contact path), as the profile uses them.
+        let collisions = crate::collisions::check(&result, &req.setup);
+        result.diagnostics.extend(collisions);
     }
     if version == 2 {
         crate::timing::estimate_times(&mut result);

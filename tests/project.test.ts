@@ -186,3 +186,18 @@ test('offset tables require and roundtrip through a v2 project, and must match t
   mismatch.document.setup.toolOffsets[0].wearXMm = -0.3;
   assert.throws(() => decodeProject(JSON.stringify(mismatch)));
 });
+
+test('jaws persist with the project and older projects without them stay valid', () => {
+  const withJaws = document();
+  withJaws.setup = { ...withJaws.setup, jaws: { gripLengthMm: 25, jawHeightMm: 10 } };
+  withJaws.draft = draftFromSetup(withJaws.setup);
+  const loaded = decodeProject(encodeProject(withJaws));
+  assert.deepEqual(loaded.setup.jaws, { gripLengthMm: 25, jawHeightMm: 10 });
+  assert.equal(loaded.draft.gripLength, '25');
+  assert.equal(JSON.parse(encodeProject(withJaws)).version, 1);
+  const legacy = decodeProject(encodeProject(document()));
+  assert.equal(legacy.setup.jaws, undefined);
+  const mismatch = document();
+  mismatch.draft.gripLength = '30';
+  assert.throws(() => encodeProject(mismatch), /no coinciden/);
+});

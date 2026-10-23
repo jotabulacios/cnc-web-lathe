@@ -1,13 +1,14 @@
 import type { CompileResult, Position } from './contract.ts';
 import { assemblyBounds, TOOL_ASSEMBLIES, type AssemblyMap } from './toolAssemblies.ts';
 import { getToolDefinition } from './tools.ts';
+import type { ChuckJaws } from './chuck.ts';
 
 
 export type Stock = { diameterMm: number; lengthMm: number };
 export const VIEWPORT = { width: 960, height: 520, left: 78, top: 50, plotWidth: 830, plotHeight: 394 };
 
 /** Coordinates are physical radius/Z millimeters. Diameter conversion is labels only. */
-export function createLatheView(motions: CompileResult['motions'], position: Position, stock: Stock, toolBounds?: { minZ: number; maxZ: number; minR: number; maxR: number }, assemblies: AssemblyMap = TOOL_ASSEMBLIES) {
+export function createLatheView(motions: CompileResult['motions'], position: Position, stock: Stock, toolBounds?: { minZ: number; maxZ: number; minR: number; maxR: number }, assemblies: AssemblyMap = TOOL_ASSEMBLIES, jaws?: ChuckJaws) {
   const radius = stock.diameterMm / 2;
   const reference = Math.max(stock.lengthMm, stock.diameterMm, 10);
   const chuckDepth = Math.max(stock.lengthMm * 0.15, stock.diameterMm * 0.24);
@@ -26,6 +27,11 @@ export function createLatheView(motions: CompileResult['motions'], position: Pos
     include({ zMm: point.zMm + bounds.maxZ, rMm: point.rMm + bounds.maxR });
   };
   include(position);
+  if (jaws) {
+    // Nominal jaws stay in frame on both sides of the axis.
+    include({ zMm: -stock.lengthMm, rMm: radius + jaws.jawHeightMm });
+    minR = Math.min(minR, -radius - jaws.jawHeightMm);
+  }
   for (const motion of motions) {
     include(motion.from);
     include(motion.to);

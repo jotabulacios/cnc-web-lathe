@@ -5,11 +5,12 @@ export type LabDocument = { source: string; setup: Setup; draft: SetupDraft; exe
 /** Textareas normalize line endings; keep the source sent to Rust identical to the editor. */
 export const normalizeLineEndings = (text: string) => text.replace(/\r\n?/g, '\n');
 export function copyDocument(document: LabDocument): LabDocument {
-  const { toolOffsets } = document.setup;
+  const { toolOffsets, jaws } = document.setup;
   const { offsets, isoTools } = document.draft;
   return { ...document, setup: { ...document.setup, stock: { ...document.setup.stock },
     initialPosition: { ...document.setup.initialPosition },
-    ...(toolOffsets ? { toolOffsets: toolOffsets.map(row => ({ ...row })) } : {}) },
+    ...(toolOffsets ? { toolOffsets: toolOffsets.map(row => ({ ...row })) } : {}),
+    ...(jaws ? { jaws: { ...jaws } } : {}) },
   draft: { ...document.draft, ...(offsets ? { offsets: Object.fromEntries(Object.entries(offsets).map(([id, row]) => [id, { ...row }])) } : {}),
     ...(isoTools ? { isoTools: Object.fromEntries(Object.entries(isoTools).map(([id, row]) => [id, { ...row }])) } : {}) } };
 }
@@ -19,7 +20,8 @@ export function sameSetup(a: Setup, b: Setup) {
     && a.stock.diameterMm === b.stock.diameterMm && a.stock.lengthMm === b.stock.lengthMm
     && (a.stock.innerDiameterMm ?? 0) === (b.stock.innerDiameterMm ?? 0)
     && a.initialPosition.rMm === b.initialPosition.rMm && a.initialPosition.zMm === b.initialPosition.zMm
-    && offsetsKey(a) === offsetsKey(b);
+    && offsetsKey(a) === offsetsKey(b)
+    && JSON.stringify(a.jaws ?? null) === JSON.stringify(b.jaws ?? null);
 }
 export function replaceDocument(current: LabDocument, next: LabDocument, previous: LabDocument | null) {
   const same = normalizeLineEndings(current.source) === normalizeLineEndings(next.source) && current.exerciseId === next.exerciseId && sameSetup(current.setup, next.setup)

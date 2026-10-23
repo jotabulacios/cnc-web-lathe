@@ -29,7 +29,9 @@ export const setupSchema = z.object({
   }).strict().refine(stock => (stock.innerDiameterMm ?? 0) < stock.diameterMm, 'El diámetro interior debe ser menor que el exterior.'),
   toolOffsets: z.array(toolOffsetSchema).max(6)
     .refine(rows => new Set(rows.map(row => row.toolId)).size === rows.length, 'Una fila por herramienta.').optional(),
-}).strict();
+  /** Nominal chuck jaws for the educational collision check; absent = engine defaults. */
+  jaws: z.object({ gripLengthMm: z.number().finite().min(0).max(1e9), jawHeightMm: z.number().finite().positive().max(1e9) }).strict().optional(),
+}).strict().refine(setup => !setup.jaws || setup.jaws.gripLengthMm < setup.stock.lengthMm, 'Las mordazas no pueden tomar todo el largo de la pieza.');
 const span = z.object({ line: z.number().int().positive(), columnStart: z.number().int().positive(), columnEnd: z.number().int().positive() }).strict();
 const motionKind = z.enum(['rapid', 'linear', 'arc-cw', 'arc-ccw']);
 const TAU = 2 * Math.PI;
@@ -86,7 +88,9 @@ export const resultSchema = z.object({
     cycle: z.enum(['roughing-setup', 'roughing', 'finishing']).optional(),
   }).strict()),
   motions: z.array(motion),
-  diagnostics: z.array(z.object({ code: z.string(), severity: z.enum(['error','warning']), span, message: z.string() }).strict()),
+  diagnostics: z.array(z.object({ code: z.string(), severity: z.enum(['error','warning']), span, message: z.string(),
+    /** Optional Z/R location (physical radius), e.g. an educational collision point. */
+    point: z.object({ rMm: z.number().finite(), zMm: z.number().finite() }).strict().optional() }).strict()),
   finalState: state.nullable(),
   estimatedTimeS: z.number().finite().nonnegative().optional(),
 }).strict().superRefine((result, ctx) => {

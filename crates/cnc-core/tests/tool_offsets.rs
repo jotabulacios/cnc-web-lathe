@@ -20,6 +20,7 @@ fn request(source: &str, tool_id: &str, offsets: Option<Vec<ToolOffset>>) -> Com
             },
             tool_id: tool_id.into(),
             tool_offsets: offsets,
+            jaws: None,
         },
     }
 }

@@ -32,6 +32,7 @@ fn request(source: &str, rows: Vec<(&str, f64)>) -> CompileRequest {
                     })
                     .collect(),
             ),
+            jaws: None,
         },
     }
 }

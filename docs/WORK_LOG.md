@@ -206,3 +206,14 @@ La geometría dimensional educativa está integrada; el kernel de referencias es
 - Módulo puro `dimensionSheet.ts`: une tramos colineales (≤ 0,005 mm), absorbe astillas (< 0,01 mm) y acota una cadena de cuerdas como arco solo si toda la cadena ajusta a un círculo; si no, «perfil curvo».
 - La hoja sigue al cursor («Parcial — bloque n/N» o «Final — bloque N/N»). La tabla «Pedido vs. obtenido» aparece solo al final de una práctica guiada. Reutiliza la comprobación existente: `expectedProfileMatches` y `expectedAnnularProfileMatches` ahora usan las mismas filas (`sampledProfileChecks`, `annularReferenceChecks`).
 - «Descargar SVG» con el mismo patrón de descarga de ProjectActions. Rust y WASM sin cambios.
+
+## Colisiones educativas del porta y las mordazas (`TOOL_HOLDER_COLLISION`, `JAW_COLLISION`)
+
+- Motivo: en una práctica real el porta golpeó la pieza. Nuevo módulo puro `collisions.rs` en cnc-core. Muestrea cada movimiento cada 0,25 mm y compara la silueta nominal de la herramienta (portada de `TOOL_ASSEMBLIES`) con el material que queda en ese instante y con una zona nominal de mordazas. Son avisos: el programa sigue siendo ejecutable. Detalle, medidas, precisión y limitaciones en COLLISIONS.md.
+- `profile_v2.rs`: el cuerpo del bucle por movimiento pasa a `step_motion` sin cambiar su comportamiento. El control de colisiones recorre el material con la misma función.
+- Setup: campo opcional `jaws { gripLengthMm, jawHeightMm }`. Si falta, se usan 15 mm de toma (o la mitad de una pieza corta) y 12 mm de altura. Se guarda con el proyecto. Los setups y proyectos anteriores siguen siendo válidos.
+- Diagnósticos: campo opcional `point` (Z/R) en el contrato. La vista 2D marca en rojo el punto de colisión de los bloques ejecutados. La 2D y la 3D dibujan las mordazas nominales. La pestaña Pieza suma los dos campos de mordazas.
+- `TOOL_WORKING_ANGLE` usa ahora el material que queda cuando el modelo exterior llega a ese movimiento, lo que elimina los falsos avisos sobre zonas ya desbastadas. Si no llega, usa el tocho inicial como antes.
+- WASM: nueva exportación `collision_model` (siluetas, zonas de corte, valores por defecto). Una prueba TS la compara punto por punto con lo que se dibuja.
+- Programas anteriores (9e299b3) con sus setups: el arco avisa `TOOL_HOLDER_COLLISION` en la línea 5 (mango e inserto en el redondeo). El cono no colisiona, ni con T0 ni con T0101/T0202. Todas las prácticas actuales y los fixtures con su setup quedan sin avisos de colisión.
+- Checks: fmt/Clippy; 198 Rust; 166 TS; 31 WASM; 91 E2E en raíz y 91 bajo /cnc-edu/.

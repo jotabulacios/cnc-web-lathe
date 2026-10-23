@@ -109,3 +109,22 @@ test('nose radius column: radius in mm, 0..5, emitted only when nonzero, older d
     assert.equal(result.errors['offset.finishing-od.noseRadius'], 'Entre 0 y 5 mm.');
   }
 });
+
+test('jaw fields: untouched keeps the legacy setup, typed values round-trip, invalid values are per field', () => {
+  const base = draftFromSetup(defaultSetup);
+  assert.equal('jaws' in validateSetupDraft(base).setup!, false);
+  const typed = validateSetupDraft({ ...base, gripLength: '20,5', jawHeight: '8' });
+  assert.deepEqual(typed.setup?.jaws, { gripLengthMm: 20.5, jawHeightMm: 8 });
+  assert.ok(setupSchema.safeParse(typed.setup).success);
+  assert.deepEqual(validateSetupDraft(draftFromSetup(typed.setup!)).setup, typed.setup);
+  // One typed field takes the other from the defaults (grip limited to half a short stock).
+  assert.deepEqual(validateSetupDraft({ ...base, jawHeight: '9' }).setup?.jaws, { gripLengthMm: 15, jawHeightMm: 9 });
+  assert.deepEqual(validateSetupDraft({ ...base, length: '20', jawHeight: '9' }).setup?.jaws, { gripLengthMm: 10, jawHeightMm: 9 });
+  assert.deepEqual(validateSetupDraft({ ...base, gripLength: '0' }).setup?.jaws, { gripLengthMm: 0, jawHeightMm: 12 });
+  for (const [field, value] of [['gripLength', '-1'], ['gripLength', '100'], ['gripLength', 'x'], ['jawHeight', '0'], ['jawHeight', '']] as const) {
+    const result = validateSetupDraft({ ...base, [field]: value });
+    assert.equal(result.setup, null, `${field}=${value}`);
+    assert.ok(result.errors[field], `${field}=${value}`);
+  }
+  assert.equal(sameSetup(typed.setup!, defaultSetup), false);
+});

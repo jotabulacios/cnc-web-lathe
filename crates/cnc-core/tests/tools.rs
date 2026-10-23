@@ -18,6 +18,7 @@ fn req(source: &str) -> CompileRequest {
             },
             tool_id: "generic-od".into(),
             tool_offsets: None,
+            jaws: None,
         },
     }
 }

@@ -1,6 +1,6 @@
 # Aviso de ángulo de trabajo (`TOOL_WORKING_ANGLE`)
 
-Aviso educativo del núcleo Rust (`crates/cnc-core/src/working_angle.rs`). Señala los avances en los que el inserto tendría que cortar con el flanco trasero, como el cono que achicaba el diámetro hacia el plato y el arco que redondeaba hacia el plato de la revisión de taller (ver GUIDED_EXERCISES.md). Es un **aviso**, no un error: el programa sigue siendo ejecutable y la trayectoria no cambia. Tampoco es una comprobación de colisiones y no certifica que un programa sea seguro en una máquina real.
+Aviso educativo del núcleo Rust (`crates/cnc-core/src/working_angle.rs`). Señala los avances en los que el inserto tendría que cortar con el flanco trasero, como el cono que achicaba el diámetro hacia el plato y el arco que redondeaba hacia el plato de la revisión de taller (ver GUIDED_EXERCISES.md). Es un **aviso**, no un error: el programa sigue siendo ejecutable y la trayectoria no cambia. Tampoco es una comprobación de colisiones (para eso están `TOOL_HOLDER_COLLISION` y `JAW_COLLISION`, ver COLLISIONS.md) y no certifica que un programa sea seguro en una máquina real.
 
 ## Convención
 
@@ -30,13 +30,13 @@ Con estos valores, el cono anterior (Ø40 en Z0 → Ø20 en Z−60, 9,5° bajo �
 - Solo avances G01/G02/G03, incluidos los tramos de avance que generan G71/G70. Los rápidos G00 no se revisan (RAPID_IN_STOCK ya cubre su contacto con material en el perfil).
 - La trayectoria programada, antes de correctores y de la compensación de radio de punta.
 - La herramienta activa de cada movimiento (T del programa o la del setup).
-- Contacto con material, aproximado: el avance tiene que atravesar el **tocho inicial abierto** (r < R, −L < Z < 0). Un avance en el aire fuera del tocho no avisa. El modelo no sigue el material ya removido: un avance en el aire dentro de una zona ya desbastada puede avisar igual.
+- Contacto con material: si el modelo exterior de material llega a ese movimiento (el mismo recorrido que `profile_at_v2`, ver COLLISIONS.md), se usa el **material que queda**: un avance en el aire sobre una zona ya desbastada no avisa. Si no llega (programas con T5, perfil congelado, avances hacia +Z o cortes no admitidos), se usa el criterio anterior: el avance tiene que atravesar el **tocho inicial abierto** (r < R, −L < Z < 0). En los arcos que cortan, el tramo prohibido se sigue muestreando contra el tocho inicial.
 - En los arcos, la tangente varía en forma lineal con el barrido; se calcula analíticamente qué tramo del arco cae en el sector prohibido y se muestrean 32 puntos de ese tramo contra el tocho.
 - Un aviso por bloque, con la ubicación del bloque (línea y columnas), como los demás diagnósticos. El editor lo muestra en ámbar en «Avisos del programa».
 
 ## Limitaciones
 
-- No es una comprobación de colisiones del porta, las mordazas, la contrapunta ni el mandril. No se modela la geometría real del mango ni del inserto.
+- No es una comprobación de colisiones: el porta, el inserto y las mordazas los revisa COLLISIONS.md con siluetas nominales. La contrapunta no se modela.
 - El ancho real de la cuchilla de ranurar no se modela: el motor sigue cortando con una punta ideal.
 - El agujero de un tubo no se descuenta del tocho para este aviso; solo afecta a herramientas exteriores dentro del agujero, un caso que ya no tiene sentido físico.
 - La herramienta interior y la neutra no tienen envolvente.

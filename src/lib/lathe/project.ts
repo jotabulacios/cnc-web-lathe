@@ -15,6 +15,7 @@ const documentSchema = z.object({
   draft: z.object({ diameter: field, innerDiameter: field.optional(), length: field, initialX: field, initialZ: field, toolId: toolIdSchema.optional(),
     offsets: z.partialRecord(toolIdSchema, z.object({ calibrationErrorX: field, calibrationErrorZ: field, wearX: field, wearZ: field, noseRadius: field.optional() }).strict()).optional(),
     isoTools: z.partialRecord(toolIdSchema, z.object({ insert: z.string().max(32), holder: z.string().max(32) }).strict()).optional(),
+    gripLength: field.optional(), jawHeight: field.optional(),
   }).strict(),
   exerciseId: z.string().max(64).regex(/^[a-z-]+$/).nullable(),
 }).strict().superRefine((document, context) => {
