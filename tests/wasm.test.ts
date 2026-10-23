@@ -523,3 +523,26 @@ test('G96/G99 and the time estimate cross the JS boundary; v1 results carry no t
   const legacy=resultSchema.parse(wasm.compile(request('G00 X60 Z5\nM30')));
   assert.equal(legacy.estimatedTimeS,undefined);
 });
+
+test('TOOL_WORKING_ANGLE crosses the JS boundary as a warning; the program stays executable',()=>{
+  // Arc practice before the shop review: rounding toward the chuck with T0202.
+  const oldArc='G21 G18 G98\nT0202\nS900 M03\nG00 X40 Z0\nG03 X20 Z-10 I-10 K0 F100\nG00 X60\nZ5\nM05\nM30\n';
+  const v2={...request(oldArc),apiVersion:2 as const,dialect:'edu-lathe-v2' as const};
+  for(const result of [wasm.compile(request(oldArc)),wasm.compile_v2(v2)].map(r=>resultSchema.parse(r))){
+    assert.equal(result.executable,true);
+    assert.equal(result.motions.length,4);
+    assert.equal(result.diagnostics.length,1);
+    const [warning]=result.diagnostics;
+    assert.equal(warning.code,'TOOL_WORKING_ANGLE');
+    assert.equal(warning.severity,'warning');
+    assert.equal(warning.span.line,5);
+    assert.match(warning.message,/flanco trasero/);
+  }
+  // The rewritten practices stay clean.
+  for(const file of ['arc-convex.nc','taper-turning.nc']){
+    const text=readFileSync(new URL(`../fixtures/lathe/${file}`,import.meta.url),'utf8');
+    const result=resultSchema.parse(wasm.compile(request(text)));
+    assert.equal(result.executable,true,file);
+    assert.deepEqual(result.diagnostics,[],file);
+  }
+});

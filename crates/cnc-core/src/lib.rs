@@ -14,6 +14,7 @@ mod timing;
 mod tool_offsets;
 pub mod tool_reference;
 mod types;
+pub mod working_angle;
 
 pub use cycles::{CYCLE_PASS_CLEARANCE_MM, MAX_CYCLE_MOTIONS, MIN_CYCLE_DEPTH_MM};
 pub use interpreter::{ARC_RADIUS_EPS_MM, compile, compile_v2};

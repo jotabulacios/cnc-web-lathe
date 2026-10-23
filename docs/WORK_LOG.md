@@ -191,3 +191,11 @@ La geometría dimensional educativa está integrada; el kernel de referencias es
 - El selector suma «Dividida». Muestra plano 2D y pieza 3D sincronizados, lado a lado o apilados (≤ 900 px de ventana o ≤ 640 px de visor). Detalle en SPLIT_VIEW.md.
 - Ranuras fijas en `.stage-view`: de 3D a Dividida no se recrea el contexto WebGL y se conservan la cámara, la proyección y la sección. El redimensionado usa el `ResizeObserver` existente.
 - No se persiste el modo de vista. Rust y WASM sin cambios.
+
+## Aviso de ángulo de trabajo (`TOOL_WORKING_ANGLE`)
+
+- Módulo puro `working_angle.rs` en cnc-core: envolventes nominales por herramienta (vértices del inserto en el plano Z/R) y un aviso por bloque cuando un avance G01/G02/G03 atraviesa el tocho inicial en una dirección que obligaría a cortar con el flanco trasero. Es un aviso: el programa sigue siendo ejecutable. Detalle, ángulos supuestos y limitaciones en WORKING_ANGLE.md.
+- T0101 (κr 95°, 80°) admite bajar hasta 5° hacia el plato; T0202 (κr 93°, 55°) hasta 32°; T0404 refrenta; T0303 solo radial ±3° o axial. T0 y T0505 son ideales y no se revisan.
+- El cono anterior avisa en la línea 4 con T0101 (no con T0202 ni con T0); el arco anterior avisa en la línea 5 con T0202. Todas las prácticas actuales quedan sin aviso. `first-program.nc` con T0101 como setup avisa en `U-4 W-10` (chaflán que baja hacia el plato); con su setup T0 no.
+- Sin cambios en la UI ni en el contrato TS: el esquema ya admitía avisos y el editor los muestra en ámbar.
+- Checks: fmt/Clippy; 182 Rust; 164 TS; 29 WASM; 85 E2E en raíz. No se corrió la variante bajo /cnc-edu/.

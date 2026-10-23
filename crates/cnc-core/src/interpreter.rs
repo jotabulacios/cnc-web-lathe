@@ -839,6 +839,9 @@ fn compile_version(req: &CompileRequest, version: u32) -> CompileResult {
         .any(|d| d.severity == Severity::Error);
     if result.executable {
         result.final_state = Some(state);
+        // Programmed path, before offsets/nose: the envelope is a tool property.
+        let warnings = crate::working_angle::check(&result, &req.setup.stock);
+        result.diagnostics.extend(warnings);
     } else {
         result.blocks.clear();
         result.motions.clear();
