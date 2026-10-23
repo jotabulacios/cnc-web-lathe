@@ -1,0 +1,143 @@
+[
+  {
+    "id": "boring-and-turning",
+    "file": "boring.nc",
+    "title": "Mandrinado y cilindrado de un tubo",
+    "objective": "Compará cómo T5 amplía un agujero existente y T1 reduce el exterior, comprobando ambos diámetros y el volumen restante.",
+    "observations": [
+      "El stock comienza con Ø50 exterior, Ø20 interior y 100 mm de longitud; no se taladra un sólido.",
+      "T0505 activa la punta interior ideal. El avance G01 hasta Z−40 deja el agujero en Ø30.",
+      "La retirada a X18 viaja por el agujero antes de volver al frente de la pieza.",
+      "T0101 activa la herramienta exterior y deja Ø40 entre Z−20 y Z0, sin cerrar el agujero.",
+      "Anterior y Reiniciar reconstruyen ambas paredes. El modelo educativo no calcula el cuerpo de la barra, acceso físico, compensación ni colisiones."
+    ],
+    "expected": "Ø interior 20 y exterior 50 de Z−100 a −40; Ø interior 30 y exterior 50 de −40 a −20; Ø interior 30 y exterior 40 de −20 a Z0. Volumen restante: 43000π mm³ (aproximadamente 135088,484 mm³).",
+    "expectedAnnularProfile": {
+      "samples": [
+        {
+          "zMm": -90,
+          "innerRadiusMm": 10,
+          "outerRadiusMm": 25,
+          "toleranceMm": 1e-06
+        },
+        {
+          "zMm": -50,
+          "innerRadiusMm": 10,
+          "outerRadiusMm": 25,
+          "toleranceMm": 1e-06
+        },
+        {
+          "zMm": -35,
+          "innerRadiusMm": 15,
+          "outerRadiusMm": 25,
+          "toleranceMm": 1e-06
+        },
+        {
+          "zMm": -25,
+          "innerRadiusMm": 15,
+          "outerRadiusMm": 25,
+          "toleranceMm": 1e-06
+        },
+        {
+          "zMm": -15,
+          "innerRadiusMm": 15,
+          "outerRadiusMm": 20,
+          "toleranceMm": 1e-06
+        },
+        {
+          "zMm": -5,
+          "innerRadiusMm": 15,
+          "outerRadiusMm": 20,
+          "toleranceMm": 1e-06
+        }
+      ],
+      "volumeMm3": 135088.4841043611,
+      "volumeToleranceMm3": 1e-06
+    },
+    "expectedFinalPosition": {
+      "rMm": 30,
+      "zMm": 5
+    },
+    "expectedFinalToolId": "roughing-od",
+    "blockCount": 15,
+    "toleranceMm": 1e-06,
+    "setup": {
+      "xConvention": "diameter",
+      "initialPosition": {
+        "rMm": 30,
+        "zMm": 5
+      },
+      "stock": {
+        "diameterMm": 50,
+        "innerDiameterMm": 20,
+        "lengthMm": 100
+      },
+      "toolId": "boring-id"
+    }
+  },
+  {
+    "id": "tubular-facing-and-boring",
+    "file": "tubular-facing.nc",
+    "title": "Refrentado y mandrinado de un tubo",
+    "objective": "Retirá 5 mm del frente y ampliá el agujero, comprobando que el mandrinado atraviesa primero una región ya vacía.",
+    "observations": [
+      "El material inicial es un tubo Ø50/Ø20 de 100 mm; el agujero ya existe.",
+      "T0404 refrenta en Z−5 desde X60 hasta X20: atraviesa toda la pared y elimina el frente entre Z−5 y Z0.",
+      "El movimiento radial debe llegar al agujero. Un corte que termina dentro de la pared sigue sin estar soportado.",
+      "T0505 amplía el agujero a Ø30 hasta Z−40. Entre Z0 y Z−5 la punta pasa por aire; no vuelve a crear material.",
+      "Las cotas se muestrean donde queda material. El frente retirado está vacío; el volumen también debe coincidir.",
+      "Herramientas puntuales ideales: no se calcula el cuerpo del porta, acceso físico ni compensación."
+    ],
+    "expected": "Material Ø50/Ø20 entre Z−100 y Z−40 y Ø50/Ø30 entre Z−40 y Z−5; frente vacío entre Z−5 y Z0. Volumen: 45500π mm³ (aproximadamente 142942,466 mm³).",
+    "expectedAnnularProfile": {
+      "samples": [
+        {
+          "zMm": -90,
+          "innerRadiusMm": 10,
+          "outerRadiusMm": 25,
+          "toleranceMm": 1e-06
+        },
+        {
+          "zMm": -50,
+          "innerRadiusMm": 10,
+          "outerRadiusMm": 25,
+          "toleranceMm": 1e-06
+        },
+        {
+          "zMm": -35,
+          "innerRadiusMm": 15,
+          "outerRadiusMm": 25,
+          "toleranceMm": 1e-06
+        },
+        {
+          "zMm": -10,
+          "innerRadiusMm": 15,
+          "outerRadiusMm": 25,
+          "toleranceMm": 1e-06
+        }
+      ],
+      "volumeMm3": 142942.4657383356,
+      "volumeToleranceMm3": 1e-06
+    },
+    "expectedFinalPosition": {
+      "rMm": 30,
+      "zMm": 5
+    },
+    "expectedFinalToolId": "boring-id",
+    "blockCount": 14,
+    "toleranceMm": 1e-06,
+    "setup": {
+      "xConvention": "diameter",
+      "initialPosition": {
+        "rMm": 30,
+        "zMm": 5
+      },
+      "stock": {
+        "diameterMm": 50,
+        "innerDiameterMm": 20,
+        "lengthMm": 100
+      },
+      "toolId": "facing-od"
+    }
+  }
+]

@@ -1,0 +1,303 @@
+[
+  {
+    "id": "straight",
+    "file": "straight-turning.nc",
+    "title": "Cilindrado exterior",
+    "objective": "Observá cómo una pasada longitudinal lleva el frente de Ø50 a Ø40.",
+    "observations": [
+      "La aproximación radial termina en Z2, fuera de la cara frontal.",
+      "G01 conserva X40 y avanza hasta Z−60.",
+      "La herramienta se retira en X antes de volver a Z5."
+    ],
+    "expected": "Ø40 entre Z0 y Z−60; Ø50 entre Z−60 y Z−100.",
+    "expectedSpans": [
+      {
+        "zStartMm": -100,
+        "zEndMm": -60,
+        "radiusMm": 25
+      },
+      {
+        "zStartMm": -60,
+        "zEndMm": 0,
+        "radiusMm": 20
+      }
+    ],
+    "blockCount": 9,
+    "setup": {
+      "xConvention": "diameter",
+      "initialPosition": {
+        "rMm": 30,
+        "zMm": 5
+      },
+      "stock": {
+        "diameterMm": 50,
+        "lengthMm": 100
+      },
+      "toolId": "generic-od"
+    },
+    "expectedFinalPosition": {
+      "rMm": 30,
+      "zMm": 5
+    },
+    "toleranceMm": 1e-09
+  },
+  {
+    "id": "two-steps",
+    "file": "two-step-turning.nc",
+    "title": "Dos escalones",
+    "objective": "Compará dos pasadas que terminan en diámetros y profundidades diferentes.",
+    "observations": [
+      "La primera pasada deja Ø40 desde Z0 hasta Z−40.",
+      "La segunda deja Ø30 desde Z0 hasta Z−20.",
+      "Anterior y Reiniciar reconstruyen el material del bloque elegido."
+    ],
+    "expected": "Ø50 de Z−100 a −40; Ø40 de −40 a −20; Ø30 de −20 a Z0.",
+    "expectedSpans": [
+      {
+        "zStartMm": -100,
+        "zEndMm": -40,
+        "radiusMm": 25
+      },
+      {
+        "zStartMm": -40,
+        "zEndMm": -20,
+        "radiusMm": 20
+      },
+      {
+        "zStartMm": -20,
+        "zEndMm": 0,
+        "radiusMm": 15
+      }
+    ],
+    "blockCount": 13,
+    "setup": {
+      "xConvention": "diameter",
+      "initialPosition": {
+        "rMm": 30,
+        "zMm": 5
+      },
+      "stock": {
+        "diameterMm": 50,
+        "lengthMm": 100
+      },
+      "toolId": "generic-od"
+    },
+    "expectedFinalPosition": {
+      "rMm": 30,
+      "zMm": 5
+    },
+    "toleranceMm": 1e-09
+  },
+  {
+    "id": "incremental",
+    "file": "incremental-turning.nc",
+    "title": "Incrementos U/W",
+    "objective": "Relacioná los desplazamientos relativos U/W con las posiciones X/Z del visor.",
+    "observations": [
+      "Desde X54, U−14 lleva a X40: el radio disminuye 7 mm.",
+      "Desde Z2, W−32 lleva a Z−30; el diámetro se conserva.",
+      "U20 y W35 retiran la herramienta hasta X60 Z5."
+    ],
+    "expected": "Ø40 entre Z0 y Z−30; Ø50 hasta Z−100. Posición final X60 Z5.",
+    "expectedSpans": [
+      {
+        "zStartMm": -100,
+        "zEndMm": -30,
+        "radiusMm": 25
+      },
+      {
+        "zStartMm": -30,
+        "zEndMm": 0,
+        "radiusMm": 20
+      }
+    ],
+    "blockCount": 9,
+    "setup": {
+      "xConvention": "diameter",
+      "initialPosition": {
+        "rMm": 30,
+        "zMm": 5
+      },
+      "stock": {
+        "diameterMm": 50,
+        "lengthMm": 100
+      },
+      "toolId": "generic-od"
+    },
+    "expectedFinalPosition": {
+      "rMm": 30,
+      "zMm": 5
+    },
+    "toleranceMm": 1e-09
+  },
+  {
+    "id": "taper",
+    "file": "taper-turning.nc",
+    "title": "Cono exterior",
+    "objective": "Observá cómo una misma pasada de G01 mueve X y Z a la vez y deja un cono en lugar de un cilindro.",
+    "observations": [
+      "G00 X40 Z0 aproxima la punta al frente sin remover material.",
+      "G01 X20 Z−60 baja el diámetro de 40 a 20 mientras la punta llega a Z−60.",
+      "En Z−60 queda un hombro: por debajo, el stock conserva Ø50.",
+      "La tabla muestra el tramo como «20 → 40» porque el radio crece desde Z−60 hacia Z0."
+    ],
+    "expected": "Ø50 entre Z−100 y Z−60; cono de Ø20 en Z−60 a Ø40 en Z0.",
+    "expectedSpans": [
+      {
+        "zStartMm": -100,
+        "zEndMm": -60,
+        "rStartMm": 25,
+        "rEndMm": 25
+      },
+      {
+        "zStartMm": -60,
+        "zEndMm": 0,
+        "rStartMm": 10,
+        "rEndMm": 20
+      }
+    ],
+    "blockCount": 8,
+    "setup": {
+      "xConvention": "diameter",
+      "initialPosition": {
+        "rMm": 30,
+        "zMm": 5
+      },
+      "stock": {
+        "diameterMm": 50,
+        "lengthMm": 100
+      },
+      "toolId": "generic-od"
+    },
+    "expectedFinalPosition": {
+      "rMm": 30,
+      "zMm": 5
+    },
+    "toleranceMm": 1e-09
+  },
+  {
+    "id": "arc-convex",
+    "file": "arc-convex.nc",
+    "title": "Arco convexo exterior",
+    "objective": "Relacioná un cuarto de círculo G03 en el plano X/Z con el perfil exterior y su aproximación por cuerdas.",
+    "observations": [
+      "T0202 selecciona la herramienta de acabado; S900 M03 mantiene el husillo activo durante el corte.",
+      "X se programa en diámetro, pero I−10 desplaza el centro 10 mm en radio desde el inicio; K0 conserva su Z.",
+      "El arco va de X40 Z0 a X20 Z−10. El perfil usa cuerdas con desviación perpendicular δ de hasta 0,01 mm; esa cota no es un error radial universal.",
+      "En Z−10 queda un hombro hacia el stock de Ø50. La herramienta se retira en X antes de volver a Z5."
+    ],
+    "expected": "Ø50 entre Z−100 y Z−10; arco convexo de Ø20 en Z−10 a Ø40 en Z0, aproximado por cuerdas.",
+    "expectedProfile": {
+      "samples": [
+        {
+          "zMm": -75,
+          "radiusMm": 25,
+          "toleranceMm": 1e-09
+        },
+        {
+          "zMm": -10,
+          "radiusMm": 10,
+          "toleranceMm": 1e-09
+        },
+        {
+          "zMm": -9.5,
+          "radiusMm": 13.122498999199198,
+          "toleranceMm": 0.06
+        },
+        {
+          "zMm": -7.5,
+          "radiusMm": 16.614378277661476,
+          "toleranceMm": 0.025
+        },
+        {
+          "zMm": -5,
+          "radiusMm": 18.66025403784439,
+          "toleranceMm": 0.02
+        },
+        {
+          "zMm": -2.5,
+          "radiusMm": 19.682458365518542,
+          "toleranceMm": 0.015
+        },
+        {
+          "zMm": 0,
+          "radiusMm": 20,
+          "toleranceMm": 1e-09
+        }
+      ],
+      "volumeMm3": 186885.37672095353,
+      "volumeToleranceMm3": 20
+    },
+    "blockCount": 9,
+    "setup": {
+      "xConvention": "diameter",
+      "initialPosition": {
+        "rMm": 30,
+        "zMm": 5
+      },
+      "stock": {
+        "diameterMm": 50,
+        "lengthMm": 100
+      },
+      "toolId": "generic-od"
+    },
+    "expectedFinalPosition": {
+      "rMm": 30,
+      "zMm": 5
+    },
+    "toleranceMm": 1e-09,
+    "expectedFinalToolId": "finishing-od"
+  },
+  {
+    "id": "facing-turning",
+    "file": "facing-turning.nc",
+    "title": "Refrentado y cilindrado",
+    "objective": "Combiná el refrentado hasta X0 con un cilindrado exterior y observá el cambio de herramienta.",
+    "observations": [
+      "T0404 selecciona la herramienta de refrentado; G01 X0 en Z−1 elimina la franja frontal entre Z−1 y Z0.",
+      "La punta vuelve a Z2 antes del cambio T0101 y de la aproximación radial a X40.",
+      "G01 Z−20 conserva Ø40 desde la nueva cara en Z−1 hasta Z−20; el stock posterior conserva Ø50.",
+      "S1000 M03 mantiene el husillo activo durante ambas operaciones. Al terminar, la herramienta se retira en X antes de volver a Z5."
+    ],
+    "expected": "Ø50 de Z−100 a −20; Ø40 de Z−20 a −1; sin material entre Z−1 y Z0.",
+    "expectedSpans": [
+      {
+        "zStartMm": -100,
+        "zEndMm": -20,
+        "rStartMm": 25,
+        "rEndMm": 25
+      },
+      {
+        "zStartMm": -20,
+        "zEndMm": -1,
+        "rStartMm": 20,
+        "rEndMm": 20
+      },
+      {
+        "zStartMm": -1,
+        "zEndMm": 0,
+        "rStartMm": 0,
+        "rEndMm": 0
+      }
+    ],
+    "blockCount": 13,
+    "setup": {
+      "xConvention": "diameter",
+      "initialPosition": {
+        "rMm": 30,
+        "zMm": 5
+      },
+      "stock": {
+        "diameterMm": 50,
+        "lengthMm": 100
+      },
+      "toolId": "generic-od"
+    },
+    "expectedFinalPosition": {
+      "rMm": 30,
+      "zMm": 5
+    },
+    "toleranceMm": 1e-09,
+    "expectedFinalToolId": "roughing-od"
+  }
+]

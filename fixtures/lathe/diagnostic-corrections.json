@@ -1,0 +1,45 @@
+[
+  {
+    "setup": {
+      "xConvention": "diameter",
+      "initialPosition": {
+        "rMm": 30,
+        "zMm": 5
+      },
+      "stock": {
+        "diameterMm": 50,
+        "lengthMm": 100
+      },
+      "toolId": "generic-od"
+    },
+    "id": "spindle-corrected",
+    "file": "diagnostic-spindle-fixed.nc",
+    "title": "Referencia: cilindrado con husillo",
+    "objective": "Compará el corte con husillo activo con la práctica de diagnóstico SPINDLE_OFF.",
+    "observations": [
+      "S1000 M03 activa el husillo antes del corte.",
+      "G01 Z−20 deja Ø40 en el frente; se conserva Ø50 detrás.",
+      "La retirada precede a M05 y M30."
+    ],
+    "expected": "Ø50 entre Z−100 y Z−20; Ø40 entre Z−20 y Z0.",
+    "expectedSpans": [
+      {
+        "zStartMm": -100,
+        "zEndMm": -20,
+        "radiusMm": 25
+      },
+      {
+        "zStartMm": -20,
+        "zEndMm": 0,
+        "radiusMm": 20
+      }
+    ],
+    "blockCount": 8,
+    "expectedFinalPosition": {
+      "rMm": 30,
+      "zMm": 5
+    },
+    "expectedFinalToolId": "roughing-od",
+    "toleranceMm": 1e-09
+  }
+]

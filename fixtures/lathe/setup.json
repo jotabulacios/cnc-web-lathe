@@ -1,0 +1,6 @@
+{
+  "xConvention": "diameter",
+  "initialPosition": { "rMm": 30, "zMm": 5 },
+  "stock": { "diameterMm": 50, "lengthMm": 100 },
+  "toolId": "generic-od"
+}

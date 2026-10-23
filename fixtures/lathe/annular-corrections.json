@@ -1,0 +1,34 @@
+[
+  {
+    "id": "rapid-through-bore",
+    "file": "rapid-through-bore.nc",
+    "title": "Referencia: retirada por el agujero",
+    "objective": "Compará la retirada longitudinal por el agujero con el rápido radial que atravesaba la pared del tubo.",
+    "observations": [
+      "X18 mantiene la punta ideal dentro del agujero inicial de Ø20.",
+      "Después de llegar a Z−30, G00 Z2 vuelve al frente conservando X18.",
+      "Solo después de salir por la cara frontal, G00 X60 Z5 aleja la punta de la pieza.",
+      "No hay corte ni remoción: se conserva el tubo Ø50/Ø20 de 100 mm. El recorrido de punta no certifica acceso físico de la barra ni colisiones de su cuerpo."
+    ],
+    "expected": "Recorrido completo sin advertencias del perfil: Ø50 exterior y Ø20 interior en toda la longitud, con volumen 52500π mm³ sin cambios.",
+    "setup": {
+      "xConvention": "diameter",
+      "initialPosition": { "rMm": 30, "zMm": 5 },
+      "stock": { "diameterMm": 50, "innerDiameterMm": 20, "lengthMm": 100 },
+      "toolId": "boring-id"
+    },
+    "blockCount": 7,
+    "expectedFinalPosition": { "rMm": 30, "zMm": 5 },
+    "expectedFinalToolId": "boring-id",
+    "toleranceMm": 0.000001,
+    "expectedAnnularProfile": {
+      "samples": [
+        { "zMm": -80, "innerRadiusMm": 10, "outerRadiusMm": 25, "toleranceMm": 0.000001 },
+        { "zMm": -40, "innerRadiusMm": 10, "outerRadiusMm": 25, "toleranceMm": 0.000001 },
+        { "zMm": -10, "innerRadiusMm": 10, "outerRadiusMm": 25, "toleranceMm": 0.000001 }
+      ],
+      "volumeMm3": 164933.61431346415,
+      "volumeToleranceMm3": 0.000001
+    }
+  }
+]

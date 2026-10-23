@@ -1,0 +1,15 @@
+node_modules/
+.next/
+out/
+target/
+next-env.d.ts
+*.tsbuildinfo
+public/wasm/
+test-results/
+playwright-report/
+.env*
+
+# Local verification artefacts: CI reruns every check on each push.
+docs/evidence/
+docs/visual-review-*/*.png
+FIRST_PROMPT.md

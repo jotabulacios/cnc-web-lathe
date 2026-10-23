@@ -1,0 +1,465 @@
+{
+  "apiVersion": 1,
+  "dialect": "edu-lathe-v1",
+  "sourceRevision": 1,
+  "executable": true,
+  "initialState": {
+    "position": {
+      "rMm": 30.0,
+      "zMm": 5.0
+    },
+    "motion": null,
+    "feedMmMin": null,
+    "spindleRpm": 0.0,
+    "spindleOn": false,
+    "spindleDirection": "cw",
+    "ended": false
+  },
+  "blocks": [
+    {
+      "id": 0,
+      "span": {
+        "line": 1,
+        "columnStart": 1,
+        "columnEnd": 12
+      },
+      "source": "G21 G18 G98",
+      "beforeState": {
+        "position": {
+          "rMm": 30.0,
+          "zMm": 5.0
+        },
+        "motion": null,
+        "feedMmMin": null,
+        "spindleRpm": 0.0,
+        "spindleOn": false,
+        "spindleDirection": "cw",
+        "ended": false
+      },
+      "afterState": {
+        "position": {
+          "rMm": 30.0,
+          "zMm": 5.0
+        },
+        "motion": null,
+        "feedMmMin": null,
+        "spindleRpm": 0.0,
+        "spindleOn": false,
+        "spindleDirection": "cw",
+        "ended": false
+      },
+      "motionIds": [],
+      "kind": "state"
+    },
+    {
+      "id": 1,
+      "span": {
+        "line": 2,
+        "columnStart": 1,
+        "columnEnd": 10
+      },
+      "source": "S1200 M03",
+      "beforeState": {
+        "position": {
+          "rMm": 30.0,
+          "zMm": 5.0
+        },
+        "motion": null,
+        "feedMmMin": null,
+        "spindleRpm": 0.0,
+        "spindleOn": false,
+        "spindleDirection": "cw",
+        "ended": false
+      },
+      "afterState": {
+        "position": {
+          "rMm": 30.0,
+          "zMm": 5.0
+        },
+        "motion": null,
+        "feedMmMin": null,
+        "spindleRpm": 1200.0,
+        "spindleOn": true,
+        "spindleDirection": "cw",
+        "ended": false
+      },
+      "motionIds": [],
+      "kind": "state"
+    },
+    {
+      "id": 2,
+      "span": {
+        "line": 3,
+        "columnStart": 1,
+        "columnEnd": 11
+      },
+      "source": "G00 X54 Z2",
+      "beforeState": {
+        "position": {
+          "rMm": 30.0,
+          "zMm": 5.0
+        },
+        "motion": null,
+        "feedMmMin": null,
+        "spindleRpm": 1200.0,
+        "spindleOn": true,
+        "spindleDirection": "cw",
+        "ended": false
+      },
+      "afterState": {
+        "position": {
+          "rMm": 27.0,
+          "zMm": 2.0
+        },
+        "motion": "rapid",
+        "feedMmMin": null,
+        "spindleRpm": 1200.0,
+        "spindleOn": true,
+        "spindleDirection": "cw",
+        "ended": false
+      },
+      "motionIds": [
+        0
+      ],
+      "kind": "motion"
+    },
+    {
+      "id": 3,
+      "span": {
+        "line": 4,
+        "columnStart": 1,
+        "columnEnd": 13
+      },
+      "source": "G01 X46 F120",
+      "beforeState": {
+        "position": {
+          "rMm": 27.0,
+          "zMm": 2.0
+        },
+        "motion": "rapid",
+        "feedMmMin": null,
+        "spindleRpm": 1200.0,
+        "spindleOn": true,
+        "spindleDirection": "cw",
+        "ended": false
+      },
+      "afterState": {
+        "position": {
+          "rMm": 23.0,
+          "zMm": 2.0
+        },
+        "motion": "linear",
+        "feedMmMin": 120.0,
+        "spindleRpm": 1200.0,
+        "spindleOn": true,
+        "spindleDirection": "cw",
+        "ended": false
+      },
+      "motionIds": [
+        1
+      ],
+      "kind": "motion"
+    },
+    {
+      "id": 4,
+      "span": {
+        "line": 5,
+        "columnStart": 1,
+        "columnEnd": 5
+      },
+      "source": "Z-20",
+      "beforeState": {
+        "position": {
+          "rMm": 23.0,
+          "zMm": 2.0
+        },
+        "motion": "linear",
+        "feedMmMin": 120.0,
+        "spindleRpm": 1200.0,
+        "spindleOn": true,
+        "spindleDirection": "cw",
+        "ended": false
+      },
+      "afterState": {
+        "position": {
+          "rMm": 23.0,
+          "zMm": -20.0
+        },
+        "motion": "linear",
+        "feedMmMin": 120.0,
+        "spindleRpm": 1200.0,
+        "spindleOn": true,
+        "spindleDirection": "cw",
+        "ended": false
+      },
+      "motionIds": [
+        2
+      ],
+      "kind": "motion"
+    },
+    {
+      "id": 5,
+      "span": {
+        "line": 6,
+        "columnStart": 1,
+        "columnEnd": 9
+      },
+      "source": "U-4 W-10",
+      "beforeState": {
+        "position": {
+          "rMm": 23.0,
+          "zMm": -20.0
+        },
+        "motion": "linear",
+        "feedMmMin": 120.0,
+        "spindleRpm": 1200.0,
+        "spindleOn": true,
+        "spindleDirection": "cw",
+        "ended": false
+      },
+      "afterState": {
+        "position": {
+          "rMm": 21.0,
+          "zMm": -30.0
+        },
+        "motion": "linear",
+        "feedMmMin": 120.0,
+        "spindleRpm": 1200.0,
+        "spindleOn": true,
+        "spindleDirection": "cw",
+        "ended": false
+      },
+      "motionIds": [
+        3
+      ],
+      "kind": "motion"
+    },
+    {
+      "id": 6,
+      "span": {
+        "line": 7,
+        "columnStart": 1,
+        "columnEnd": 11
+      },
+      "source": "G00 X60 Z5",
+      "beforeState": {
+        "position": {
+          "rMm": 21.0,
+          "zMm": -30.0
+        },
+        "motion": "linear",
+        "feedMmMin": 120.0,
+        "spindleRpm": 1200.0,
+        "spindleOn": true,
+        "spindleDirection": "cw",
+        "ended": false
+      },
+      "afterState": {
+        "position": {
+          "rMm": 30.0,
+          "zMm": 5.0
+        },
+        "motion": "rapid",
+        "feedMmMin": 120.0,
+        "spindleRpm": 1200.0,
+        "spindleOn": true,
+        "spindleDirection": "cw",
+        "ended": false
+      },
+      "motionIds": [
+        4
+      ],
+      "kind": "motion"
+    },
+    {
+      "id": 7,
+      "span": {
+        "line": 8,
+        "columnStart": 1,
+        "columnEnd": 4
+      },
+      "source": "M05",
+      "beforeState": {
+        "position": {
+          "rMm": 30.0,
+          "zMm": 5.0
+        },
+        "motion": "rapid",
+        "feedMmMin": 120.0,
+        "spindleRpm": 1200.0,
+        "spindleOn": true,
+        "spindleDirection": "cw",
+        "ended": false
+      },
+      "afterState": {
+        "position": {
+          "rMm": 30.0,
+          "zMm": 5.0
+        },
+        "motion": "rapid",
+        "feedMmMin": 120.0,
+        "spindleRpm": 1200.0,
+        "spindleOn": false,
+        "spindleDirection": "cw",
+        "ended": false
+      },
+      "motionIds": [],
+      "kind": "state"
+    },
+    {
+      "id": 8,
+      "span": {
+        "line": 9,
+        "columnStart": 1,
+        "columnEnd": 4
+      },
+      "source": "M30",
+      "beforeState": {
+        "position": {
+          "rMm": 30.0,
+          "zMm": 5.0
+        },
+        "motion": "rapid",
+        "feedMmMin": 120.0,
+        "spindleRpm": 1200.0,
+        "spindleOn": false,
+        "spindleDirection": "cw",
+        "ended": false
+      },
+      "afterState": {
+        "position": {
+          "rMm": 30.0,
+          "zMm": 5.0
+        },
+        "motion": "rapid",
+        "feedMmMin": 120.0,
+        "spindleRpm": 1200.0,
+        "spindleOn": false,
+        "spindleDirection": "cw",
+        "ended": true
+      },
+      "motionIds": [],
+      "kind": "end"
+    }
+  ],
+  "motions": [
+    {
+      "id": 0,
+      "blockId": 2,
+      "span": {
+        "line": 3,
+        "columnStart": 1,
+        "columnEnd": 11
+      },
+      "kind": "rapid",
+      "from": {
+        "rMm": 30.0,
+        "zMm": 5.0
+      },
+      "to": {
+        "rMm": 27.0,
+        "zMm": 2.0
+      },
+      "feedMmMin": null,
+      "toolId": "generic-od",
+      "lengthMm": 4.242640687119285
+    },
+    {
+      "id": 1,
+      "blockId": 3,
+      "span": {
+        "line": 4,
+        "columnStart": 1,
+        "columnEnd": 13
+      },
+      "kind": "linear",
+      "from": {
+        "rMm": 27.0,
+        "zMm": 2.0
+      },
+      "to": {
+        "rMm": 23.0,
+        "zMm": 2.0
+      },
+      "feedMmMin": 120.0,
+      "toolId": "generic-od",
+      "lengthMm": 4.0
+    },
+    {
+      "id": 2,
+      "blockId": 4,
+      "span": {
+        "line": 5,
+        "columnStart": 1,
+        "columnEnd": 5
+      },
+      "kind": "linear",
+      "from": {
+        "rMm": 23.0,
+        "zMm": 2.0
+      },
+      "to": {
+        "rMm": 23.0,
+        "zMm": -20.0
+      },
+      "feedMmMin": 120.0,
+      "toolId": "generic-od",
+      "lengthMm": 22.0
+    },
+    {
+      "id": 3,
+      "blockId": 5,
+      "span": {
+        "line": 6,
+        "columnStart": 1,
+        "columnEnd": 9
+      },
+      "kind": "linear",
+      "from": {
+        "rMm": 23.0,
+        "zMm": -20.0
+      },
+      "to": {
+        "rMm": 21.0,
+        "zMm": -30.0
+      },
+      "feedMmMin": 120.0,
+      "toolId": "generic-od",
+      "lengthMm": 10.198039027185569
+    },
+    {
+      "id": 4,
+      "blockId": 6,
+      "span": {
+        "line": 7,
+        "columnStart": 1,
+        "columnEnd": 11
+      },
+      "kind": "rapid",
+      "from": {
+        "rMm": 21.0,
+        "zMm": -30.0
+      },
+      "to": {
+        "rMm": 30.0,
+        "zMm": 5.0
+      },
+      "feedMmMin": null,
+      "toolId": "generic-od",
+      "lengthMm": 36.138621999185304
+    }
+  ],
+  "diagnostics": [],
+  "finalState": {
+    "position": {
+      "rMm": 30.0,
+      "zMm": 5.0
+    },
+    "motion": "rapid",
+    "feedMmMin": 120.0,
+    "spindleRpm": 1200.0,
+    "spindleOn": false,
+    "spindleDirection": "cw",
+    "ended": true
+  }
+}

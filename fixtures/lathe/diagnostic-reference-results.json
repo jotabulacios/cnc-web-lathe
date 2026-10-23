@@ -1,0 +1,850 @@
+{
+  "diagnostic-spindle-off": {
+    "result": {
+      "apiVersion": 1,
+      "dialect": "edu-lathe-v1",
+      "sourceRevision": 23,
+      "executable": true,
+      "initialState": {
+        "position": {
+          "rMm": 30,
+          "zMm": 5
+        },
+        "motion": null,
+        "feedMmMin": null,
+        "spindleRpm": 0,
+        "spindleOn": false,
+        "spindleDirection": "cw",
+        "ended": false
+      },
+      "blocks": [
+        {
+          "id": 0,
+          "span": {
+            "line": 1,
+            "columnStart": 1,
+            "columnEnd": 12
+          },
+          "source": "G21 G18 G98",
+          "beforeState": {
+            "position": {
+              "rMm": 30,
+              "zMm": 5
+            },
+            "motion": null,
+            "feedMmMin": null,
+            "spindleRpm": 0,
+            "spindleOn": false,
+            "spindleDirection": "cw",
+            "ended": false
+          },
+          "afterState": {
+            "position": {
+              "rMm": 30,
+              "zMm": 5
+            },
+            "motion": null,
+            "feedMmMin": null,
+            "spindleRpm": 0,
+            "spindleOn": false,
+            "spindleDirection": "cw",
+            "ended": false
+          },
+          "motionIds": [],
+          "kind": "state"
+        },
+        {
+          "id": 1,
+          "span": {
+            "line": 2,
+            "columnStart": 1,
+            "columnEnd": 6
+          },
+          "source": "T0101",
+          "beforeState": {
+            "position": {
+              "rMm": 30,
+              "zMm": 5
+            },
+            "motion": null,
+            "feedMmMin": null,
+            "spindleRpm": 0,
+            "spindleOn": false,
+            "spindleDirection": "cw",
+            "ended": false
+          },
+          "afterState": {
+            "position": {
+              "rMm": 30,
+              "zMm": 5
+            },
+            "motion": null,
+            "feedMmMin": null,
+            "spindleRpm": 0,
+            "spindleOn": false,
+            "spindleDirection": "cw",
+            "ended": false,
+            "toolId": "roughing-od"
+          },
+          "motionIds": [],
+          "kind": "state"
+        },
+        {
+          "id": 2,
+          "span": {
+            "line": 3,
+            "columnStart": 1,
+            "columnEnd": 11
+          },
+          "source": "G00 X40 Z0",
+          "beforeState": {
+            "position": {
+              "rMm": 30,
+              "zMm": 5
+            },
+            "motion": null,
+            "feedMmMin": null,
+            "spindleRpm": 0,
+            "spindleOn": false,
+            "spindleDirection": "cw",
+            "ended": false,
+            "toolId": "roughing-od"
+          },
+          "afterState": {
+            "position": {
+              "rMm": 20,
+              "zMm": 0
+            },
+            "motion": "rapid",
+            "feedMmMin": null,
+            "spindleRpm": 0,
+            "spindleOn": false,
+            "spindleDirection": "cw",
+            "ended": false,
+            "toolId": "roughing-od"
+          },
+          "motionIds": [
+            0
+          ],
+          "kind": "motion"
+        },
+        {
+          "id": 3,
+          "span": {
+            "line": 4,
+            "columnStart": 1,
+            "columnEnd": 14
+          },
+          "source": "G01 Z-20 F120",
+          "beforeState": {
+            "position": {
+              "rMm": 20,
+              "zMm": 0
+            },
+            "motion": "rapid",
+            "feedMmMin": null,
+            "spindleRpm": 0,
+            "spindleOn": false,
+            "spindleDirection": "cw",
+            "ended": false,
+            "toolId": "roughing-od"
+          },
+          "afterState": {
+            "position": {
+              "rMm": 20,
+              "zMm": -20
+            },
+            "motion": "linear",
+            "feedMmMin": 120,
+            "spindleRpm": 0,
+            "spindleOn": false,
+            "spindleDirection": "cw",
+            "ended": false,
+            "toolId": "roughing-od"
+          },
+          "motionIds": [
+            1
+          ],
+          "kind": "motion"
+        },
+        {
+          "id": 4,
+          "span": {
+            "line": 5,
+            "columnStart": 1,
+            "columnEnd": 11
+          },
+          "source": "G00 X60 Z5",
+          "beforeState": {
+            "position": {
+              "rMm": 20,
+              "zMm": -20
+            },
+            "motion": "linear",
+            "feedMmMin": 120,
+            "spindleRpm": 0,
+            "spindleOn": false,
+            "spindleDirection": "cw",
+            "ended": false,
+            "toolId": "roughing-od"
+          },
+          "afterState": {
+            "position": {
+              "rMm": 30,
+              "zMm": 5
+            },
+            "motion": "rapid",
+            "feedMmMin": 120,
+            "spindleRpm": 0,
+            "spindleOn": false,
+            "spindleDirection": "cw",
+            "ended": false,
+            "toolId": "roughing-od"
+          },
+          "motionIds": [
+            2
+          ],
+          "kind": "motion"
+        },
+        {
+          "id": 5,
+          "span": {
+            "line": 6,
+            "columnStart": 1,
+            "columnEnd": 4
+          },
+          "source": "M05",
+          "beforeState": {
+            "position": {
+              "rMm": 30,
+              "zMm": 5
+            },
+            "motion": "rapid",
+            "feedMmMin": 120,
+            "spindleRpm": 0,
+            "spindleOn": false,
+            "spindleDirection": "cw",
+            "ended": false,
+            "toolId": "roughing-od"
+          },
+          "afterState": {
+            "position": {
+              "rMm": 30,
+              "zMm": 5
+            },
+            "motion": "rapid",
+            "feedMmMin": 120,
+            "spindleRpm": 0,
+            "spindleOn": false,
+            "spindleDirection": "cw",
+            "ended": false,
+            "toolId": "roughing-od"
+          },
+          "motionIds": [],
+          "kind": "state"
+        },
+        {
+          "id": 6,
+          "span": {
+            "line": 7,
+            "columnStart": 1,
+            "columnEnd": 4
+          },
+          "source": "M30",
+          "beforeState": {
+            "position": {
+              "rMm": 30,
+              "zMm": 5
+            },
+            "motion": "rapid",
+            "feedMmMin": 120,
+            "spindleRpm": 0,
+            "spindleOn": false,
+            "spindleDirection": "cw",
+            "ended": false,
+            "toolId": "roughing-od"
+          },
+          "afterState": {
+            "position": {
+              "rMm": 30,
+              "zMm": 5
+            },
+            "motion": "rapid",
+            "feedMmMin": 120,
+            "spindleRpm": 0,
+            "spindleOn": false,
+            "spindleDirection": "cw",
+            "ended": true,
+            "toolId": "roughing-od"
+          },
+          "motionIds": [],
+          "kind": "end"
+        }
+      ],
+      "motions": [
+        {
+          "id": 0,
+          "blockId": 2,
+          "span": {
+            "line": 3,
+            "columnStart": 1,
+            "columnEnd": 11
+          },
+          "kind": "rapid",
+          "from": {
+            "rMm": 30,
+            "zMm": 5
+          },
+          "to": {
+            "rMm": 20,
+            "zMm": 0
+          },
+          "feedMmMin": null,
+          "toolId": "roughing-od",
+          "lengthMm": 11.180339887498949
+        },
+        {
+          "id": 1,
+          "blockId": 3,
+          "span": {
+            "line": 4,
+            "columnStart": 1,
+            "columnEnd": 14
+          },
+          "kind": "linear",
+          "from": {
+            "rMm": 20,
+            "zMm": 0
+          },
+          "to": {
+            "rMm": 20,
+            "zMm": -20
+          },
+          "feedMmMin": 120,
+          "toolId": "roughing-od",
+          "lengthMm": 20
+        },
+        {
+          "id": 2,
+          "blockId": 4,
+          "span": {
+            "line": 5,
+            "columnStart": 1,
+            "columnEnd": 11
+          },
+          "kind": "rapid",
+          "from": {
+            "rMm": 20,
+            "zMm": -20
+          },
+          "to": {
+            "rMm": 30,
+            "zMm": 5
+          },
+          "feedMmMin": null,
+          "toolId": "roughing-od",
+          "lengthMm": 26.92582403567252
+        }
+      ],
+      "diagnostics": [],
+      "finalState": {
+        "position": {
+          "rMm": 30,
+          "zMm": 5
+        },
+        "motion": "rapid",
+        "feedMmMin": 120,
+        "spindleRpm": 0,
+        "spindleOn": false,
+        "spindleDirection": "cw",
+        "ended": true,
+        "toolId": "roughing-od"
+      }
+    },
+    "profile": {
+      "profileVersion": 2,
+      "sourceRevision": 23,
+      "completedBlocks": 4,
+      "evaluatedBlocks": 3,
+      "complete": false,
+      "spans": [
+        {
+          "zStartMm": -100,
+          "zEndMm": 0,
+          "rStartMm": 25,
+          "rEndMm": 25
+        }
+      ],
+      "diagnostics": [
+        {
+          "code": "SPINDLE_OFF",
+          "severity": "warning",
+          "span": {
+            "line": 4,
+            "columnStart": 1,
+            "columnEnd": 14
+          },
+          "message": "El avance entra en material sin husillo encendido y RPM positivas."
+        }
+      ]
+    }
+  },
+  "diagnostic-unsupported": {
+    "result": {
+      "apiVersion": 1,
+      "dialect": "edu-lathe-v1",
+      "sourceRevision": 23,
+      "executable": false,
+      "initialState": {
+        "position": {
+          "rMm": 30,
+          "zMm": 5
+        },
+        "motion": null,
+        "feedMmMin": null,
+        "spindleRpm": 0,
+        "spindleOn": false,
+        "spindleDirection": "cw",
+        "ended": false
+      },
+      "blocks": [],
+      "motions": [],
+      "diagnostics": [
+        {
+          "code": "UNSUPPORTED_CODE",
+          "severity": "error",
+          "span": {
+            "line": 3,
+            "columnStart": 1,
+            "columnEnd": 4
+          },
+          "message": "G76 no pertenece a edu-lathe-v1."
+        }
+      ],
+      "finalState": null
+    },
+    "profile": null
+  },
+  "diagnostic-spindle-fixed": {
+    "result": {
+      "apiVersion": 1,
+      "dialect": "edu-lathe-v1",
+      "sourceRevision": 23,
+      "executable": true,
+      "initialState": {
+        "position": {
+          "rMm": 30,
+          "zMm": 5
+        },
+        "motion": null,
+        "feedMmMin": null,
+        "spindleRpm": 0,
+        "spindleOn": false,
+        "spindleDirection": "cw",
+        "ended": false
+      },
+      "blocks": [
+        {
+          "id": 0,
+          "span": {
+            "line": 1,
+            "columnStart": 1,
+            "columnEnd": 12
+          },
+          "source": "G21 G18 G98",
+          "beforeState": {
+            "position": {
+              "rMm": 30,
+              "zMm": 5
+            },
+            "motion": null,
+            "feedMmMin": null,
+            "spindleRpm": 0,
+            "spindleOn": false,
+            "spindleDirection": "cw",
+            "ended": false
+          },
+          "afterState": {
+            "position": {
+              "rMm": 30,
+              "zMm": 5
+            },
+            "motion": null,
+            "feedMmMin": null,
+            "spindleRpm": 0,
+            "spindleOn": false,
+            "spindleDirection": "cw",
+            "ended": false
+          },
+          "motionIds": [],
+          "kind": "state"
+        },
+        {
+          "id": 1,
+          "span": {
+            "line": 2,
+            "columnStart": 1,
+            "columnEnd": 6
+          },
+          "source": "T0101",
+          "beforeState": {
+            "position": {
+              "rMm": 30,
+              "zMm": 5
+            },
+            "motion": null,
+            "feedMmMin": null,
+            "spindleRpm": 0,
+            "spindleOn": false,
+            "spindleDirection": "cw",
+            "ended": false
+          },
+          "afterState": {
+            "position": {
+              "rMm": 30,
+              "zMm": 5
+            },
+            "motion": null,
+            "feedMmMin": null,
+            "spindleRpm": 0,
+            "spindleOn": false,
+            "spindleDirection": "cw",
+            "ended": false,
+            "toolId": "roughing-od"
+          },
+          "motionIds": [],
+          "kind": "state"
+        },
+        {
+          "id": 2,
+          "span": {
+            "line": 3,
+            "columnStart": 1,
+            "columnEnd": 10
+          },
+          "source": "S1000 M03",
+          "beforeState": {
+            "position": {
+              "rMm": 30,
+              "zMm": 5
+            },
+            "motion": null,
+            "feedMmMin": null,
+            "spindleRpm": 0,
+            "spindleOn": false,
+            "spindleDirection": "cw",
+            "ended": false,
+            "toolId": "roughing-od"
+          },
+          "afterState": {
+            "position": {
+              "rMm": 30,
+              "zMm": 5
+            },
+            "motion": null,
+            "feedMmMin": null,
+            "spindleRpm": 1000,
+            "spindleOn": true,
+            "spindleDirection": "cw",
+            "ended": false,
+            "toolId": "roughing-od"
+          },
+          "motionIds": [],
+          "kind": "state"
+        },
+        {
+          "id": 3,
+          "span": {
+            "line": 4,
+            "columnStart": 1,
+            "columnEnd": 11
+          },
+          "source": "G00 X40 Z0",
+          "beforeState": {
+            "position": {
+              "rMm": 30,
+              "zMm": 5
+            },
+            "motion": null,
+            "feedMmMin": null,
+            "spindleRpm": 1000,
+            "spindleOn": true,
+            "spindleDirection": "cw",
+            "ended": false,
+            "toolId": "roughing-od"
+          },
+          "afterState": {
+            "position": {
+              "rMm": 20,
+              "zMm": 0
+            },
+            "motion": "rapid",
+            "feedMmMin": null,
+            "spindleRpm": 1000,
+            "spindleOn": true,
+            "spindleDirection": "cw",
+            "ended": false,
+            "toolId": "roughing-od"
+          },
+          "motionIds": [
+            0
+          ],
+          "kind": "motion"
+        },
+        {
+          "id": 4,
+          "span": {
+            "line": 5,
+            "columnStart": 1,
+            "columnEnd": 14
+          },
+          "source": "G01 Z-20 F120",
+          "beforeState": {
+            "position": {
+              "rMm": 20,
+              "zMm": 0
+            },
+            "motion": "rapid",
+            "feedMmMin": null,
+            "spindleRpm": 1000,
+            "spindleOn": true,
+            "spindleDirection": "cw",
+            "ended": false,
+            "toolId": "roughing-od"
+          },
+          "afterState": {
+            "position": {
+              "rMm": 20,
+              "zMm": -20
+            },
+            "motion": "linear",
+            "feedMmMin": 120,
+            "spindleRpm": 1000,
+            "spindleOn": true,
+            "spindleDirection": "cw",
+            "ended": false,
+            "toolId": "roughing-od"
+          },
+          "motionIds": [
+            1
+          ],
+          "kind": "motion"
+        },
+        {
+          "id": 5,
+          "span": {
+            "line": 6,
+            "columnStart": 1,
+            "columnEnd": 11
+          },
+          "source": "G00 X60 Z5",
+          "beforeState": {
+            "position": {
+              "rMm": 20,
+              "zMm": -20
+            },
+            "motion": "linear",
+            "feedMmMin": 120,
+            "spindleRpm": 1000,
+            "spindleOn": true,
+            "spindleDirection": "cw",
+            "ended": false,
+            "toolId": "roughing-od"
+          },
+          "afterState": {
+            "position": {
+              "rMm": 30,
+              "zMm": 5
+            },
+            "motion": "rapid",
+            "feedMmMin": 120,
+            "spindleRpm": 1000,
+            "spindleOn": true,
+            "spindleDirection": "cw",
+            "ended": false,
+            "toolId": "roughing-od"
+          },
+          "motionIds": [
+            2
+          ],
+          "kind": "motion"
+        },
+        {
+          "id": 6,
+          "span": {
+            "line": 7,
+            "columnStart": 1,
+            "columnEnd": 4
+          },
+          "source": "M05",
+          "beforeState": {
+            "position": {
+              "rMm": 30,
+              "zMm": 5
+            },
+            "motion": "rapid",
+            "feedMmMin": 120,
+            "spindleRpm": 1000,
+            "spindleOn": true,
+            "spindleDirection": "cw",
+            "ended": false,
+            "toolId": "roughing-od"
+          },
+          "afterState": {
+            "position": {
+              "rMm": 30,
+              "zMm": 5
+            },
+            "motion": "rapid",
+            "feedMmMin": 120,
+            "spindleRpm": 1000,
+            "spindleOn": false,
+            "spindleDirection": "cw",
+            "ended": false,
+            "toolId": "roughing-od"
+          },
+          "motionIds": [],
+          "kind": "state"
+        },
+        {
+          "id": 7,
+          "span": {
+            "line": 8,
+            "columnStart": 1,
+            "columnEnd": 4
+          },
+          "source": "M30",
+          "beforeState": {
+            "position": {
+              "rMm": 30,
+              "zMm": 5
+            },
+            "motion": "rapid",
+            "feedMmMin": 120,
+            "spindleRpm": 1000,
+            "spindleOn": false,
+            "spindleDirection": "cw",
+            "ended": false,
+            "toolId": "roughing-od"
+          },
+          "afterState": {
+            "position": {
+              "rMm": 30,
+              "zMm": 5
+            },
+            "motion": "rapid",
+            "feedMmMin": 120,
+            "spindleRpm": 1000,
+            "spindleOn": false,
+            "spindleDirection": "cw",
+            "ended": true,
+            "toolId": "roughing-od"
+          },
+          "motionIds": [],
+          "kind": "end"
+        }
+      ],
+      "motions": [
+        {
+          "id": 0,
+          "blockId": 3,
+          "span": {
+            "line": 4,
+            "columnStart": 1,
+            "columnEnd": 11
+          },
+          "kind": "rapid",
+          "from": {
+            "rMm": 30,
+            "zMm": 5
+          },
+          "to": {
+            "rMm": 20,
+            "zMm": 0
+          },
+          "feedMmMin": null,
+          "toolId": "roughing-od",
+          "lengthMm": 11.180339887498949
+        },
+        {
+          "id": 1,
+          "blockId": 4,
+          "span": {
+            "line": 5,
+            "columnStart": 1,
+            "columnEnd": 14
+          },
+          "kind": "linear",
+          "from": {
+            "rMm": 20,
+            "zMm": 0
+          },
+          "to": {
+            "rMm": 20,
+            "zMm": -20
+          },
+          "feedMmMin": 120,
+          "toolId": "roughing-od",
+          "lengthMm": 20
+        },
+        {
+          "id": 2,
+          "blockId": 5,
+          "span": {
+            "line": 6,
+            "columnStart": 1,
+            "columnEnd": 11
+          },
+          "kind": "rapid",
+          "from": {
+            "rMm": 20,
+            "zMm": -20
+          },
+          "to": {
+            "rMm": 30,
+            "zMm": 5
+          },
+          "feedMmMin": null,
+          "toolId": "roughing-od",
+          "lengthMm": 26.92582403567252
+        }
+      ],
+      "diagnostics": [],
+      "finalState": {
+        "position": {
+          "rMm": 30,
+          "zMm": 5
+        },
+        "motion": "rapid",
+        "feedMmMin": 120,
+        "spindleRpm": 1000,
+        "spindleOn": false,
+        "spindleDirection": "cw",
+        "ended": true,
+        "toolId": "roughing-od"
+      }
+    },
+    "profile": {
+      "profileVersion": 2,
+      "sourceRevision": 23,
+      "completedBlocks": 8,
+      "evaluatedBlocks": 8,
+      "complete": true,
+      "spans": [
+        {
+          "zStartMm": -100,
+          "zEndMm": -20,
+          "rStartMm": 25,
+          "rEndMm": 25
+        },
+        {
+          "zStartMm": -20,
+          "zEndMm": 0,
+          "rStartMm": 20,
+          "rEndMm": 20
+        }
+      ],
+      "diagnostics": []
+    }
+  }
+}

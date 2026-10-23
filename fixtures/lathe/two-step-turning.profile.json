@@ -1,0 +1,11 @@
+{
+  "afterFirstCut": [
+    {"zStartMm":-100,"zEndMm":-40,"radiusMm":25},
+    {"zStartMm":-40,"zEndMm":0,"radiusMm":20}
+  ],
+  "afterSecondCut": [
+    {"zStartMm":-100,"zEndMm":-40,"radiusMm":25},
+    {"zStartMm":-40,"zEndMm":-20,"radiusMm":20},
+    {"zStartMm":-20,"zEndMm":0,"radiusMm":15}
+  ]
+}

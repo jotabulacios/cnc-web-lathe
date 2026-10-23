@@ -1,0 +1,40 @@
+[
+  {
+    "id": "diagnose-annular-rapid",
+    "file": "rapid-through-wall.nc",
+    "title": "Diagnóstico: rápido a través de la pared",
+    "objective": "Distinguí un rápido por el agujero de un rápido que atraviesa la pared del tubo y observá el último material confirmado.",
+    "observations": [
+      "El tubo comienza con Ø50 exterior y Ø20 interior. X18 deja la punta ideal dentro del agujero existente.",
+      "G00 Z−30 recorre el agujero sin entrar en material.",
+      "En el bloque 5, G00 X60 intenta salir radialmente desde el agujero y atraviesa la pared; el motor muestra RAPID_IN_STOCK y conserva el perfil tras cuatro bloques.",
+      "Ubicá el diagnóstico en la línea 5. La referencia vuelve primero en Z al frente de la pieza y recién entonces se aleja en X.",
+      "El modelo comprueba una punta ideal; no certifica acceso físico de una barra, colisiones de su cuerpo ni validez para una máquina real."
+    ],
+    "expected": "RAPID_IN_STOCK en la línea 5; perfil congelado tras cuatro bloques, con Ø50 exterior, Ø20 interior y volumen 52500π mm³ intactos.",
+    "setup": {
+      "xConvention": "diameter",
+      "initialPosition": { "rMm": 30, "zMm": 5 },
+      "stock": { "diameterMm": 50, "innerDiameterMm": 20, "lengthMm": 100 },
+      "toolId": "boring-id"
+    },
+    "diagnostic": {
+      "stage": "annular-profile",
+      "code": "RAPID_IN_STOCK",
+      "severity": "warning",
+      "span": { "line": 5, "columnStart": 1, "columnEnd": 8 },
+      "failedAtBlock": 5,
+      "evaluatedBlocks": 4,
+      "frozenProfile": {
+        "samples": [
+          { "zMm": -80, "innerRadiusMm": 10, "outerRadiusMm": 25, "toleranceMm": 0.000001 },
+          { "zMm": -40, "innerRadiusMm": 10, "outerRadiusMm": 25, "toleranceMm": 0.000001 },
+          { "zMm": -10, "innerRadiusMm": 10, "outerRadiusMm": 25, "toleranceMm": 0.000001 }
+        ],
+        "volumeMm3": 164933.61431346415,
+        "volumeToleranceMm3": 0.000001
+      }
+    },
+    "correctionId": "rapid-through-bore"
+  }
+]

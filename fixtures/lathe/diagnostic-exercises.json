@@ -1,0 +1,84 @@
+[
+  {
+    "setup": {
+      "xConvention": "diameter",
+      "initialPosition": {
+        "rMm": 30,
+        "zMm": 5
+      },
+      "stock": {
+        "diameterMm": 50,
+        "lengthMm": 100
+      },
+      "toolId": "generic-od"
+    },
+    "id": "diagnose-spindle",
+    "file": "diagnostic-spindle-off.nc",
+    "title": "Diagnóstico: corte sin husillo",
+    "objective": "Distinguí trayectoria interpretada de material confirmado cuando el husillo está apagado.",
+    "observations": [
+      "Interpretá y avanzá hasta el bloque 4 con Siguiente o F8.",
+      "El motor conserva el cilindro Ø50 y avisa SPINDLE_OFF en el corte.",
+      "Ubicá el diagnóstico: continuar la trayectoria no confirma material posterior.",
+      "La referencia agrega S1000 M03 antes del corte y apaga el husillo al terminar."
+    ],
+    "expected": "SPINDLE_OFF en línea 4; perfil detenido tras 3 bloques, sin retirar material.",
+    "diagnostic": {
+      "stage": "profile",
+      "code": "SPINDLE_OFF",
+      "severity": "warning",
+      "span": {
+        "line": 4,
+        "columnStart": 1,
+        "columnEnd": 14
+      },
+      "failedAtBlock": 4,
+      "evaluatedBlocks": 3,
+      "frozenSpans": [
+        {
+          "zStartMm": -100,
+          "zEndMm": 0,
+          "radiusMm": 25
+        }
+      ],
+      "toleranceMm": 1e-09
+    },
+    "correctionId": "spindle-corrected"
+  },
+  {
+    "setup": {
+      "xConvention": "diameter",
+      "initialPosition": {
+        "rMm": 30,
+        "zMm": 5
+      },
+      "stock": {
+        "diameterMm": 50,
+        "lengthMm": 100
+      },
+      "toolId": "generic-od"
+    },
+    "id": "diagnose-unsupported",
+    "file": "diagnostic-unsupported.nc",
+    "title": "Diagnóstico: código no soportado",
+    "objective": "Reconocé un código fuera del dialecto educativo y localizá por qué no se puede ejecutar.",
+    "observations": [
+      "Interpretá: G76 produce UNSUPPORTED_CODE en línea 3.",
+      "La reproducción y el paso quedan bloqueados; F8 tampoco ejecuta el programa.",
+      "G76 (ciclo de roscado) existe en otros controles; este simulador todavía no lo implementa. Los ciclos G71/G70 sí están disponibles.",
+      "La referencia es un cilindrado explícito G00/G01, no una traducción del ciclo G76."
+    ],
+    "expected": "UNSUPPORTED_CODE en G76, línea 3; programa no ejecutable.",
+    "diagnostic": {
+      "stage": "compile",
+      "code": "UNSUPPORTED_CODE",
+      "severity": "error",
+      "span": {
+        "line": 3,
+        "columnStart": 1,
+        "columnEnd": 4
+      }
+    },
+    "correctionId": "straight"
+  }
+]

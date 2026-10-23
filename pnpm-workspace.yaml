@@ -1,0 +1,6 @@
+# No dependency installation scripts are required by this project.
+packages:
+  - '.'
+allowBuilds:
+  unrs-resolver: false
+  sharp: false

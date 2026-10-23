@@ -1,0 +1,90 @@
+[
+  {
+    "id": "cycle-roughing-finishing",
+    "file": "cycle-roughing-finishing.nc",
+    "title": "Ciclos G71 de desbaste y G70 de acabado",
+    "objective": "Describí un perfil una sola vez entre N10 y N50 y dejá que G71 lo desbaste por pasadas y G70 lo termine.",
+    "observations": [
+      "El primer G71 fija la profundidad por pasada (U2, en radio) y la retracción (R1); no mueve la herramienta.",
+      "El segundo G71 nombra el perfil (P10 Q50) y deja sobremedida U0,4 en diámetro y W0,1 en Z. Todo el ciclo es un solo bloque: un paso recorre todas las pasadas.",
+      "Los bloques N10 a N50 no se ejecutan después del G71: los ejecuta G70, que termina el perfil exacto y vuelve al punto de inicio.",
+      "Cada pasada corta hacia Z negativo, se retira a 45° y vuelve en rápido. Al final, una pasada sigue el contorno con la sobremedida."
+    ],
+    "expected": "Ø20 hasta Z−10, cono a Ø30 en Z−20, Ø30 hasta Z−35 y cono a Ø50 en Z−40; volumen 45500π mm³.",
+    "expectedProfile": {
+      "samples": [
+        {
+          "zMm": -75,
+          "radiusMm": 25,
+          "toleranceMm": 1e-06
+        },
+        {
+          "zMm": -40,
+          "radiusMm": 25,
+          "toleranceMm": 1e-06
+        },
+        {
+          "zMm": -37.5,
+          "radiusMm": 20.0,
+          "toleranceMm": 1e-06
+        },
+        {
+          "zMm": -35,
+          "radiusMm": 15,
+          "toleranceMm": 1e-06
+        },
+        {
+          "zMm": -27.5,
+          "radiusMm": 15,
+          "toleranceMm": 1e-06
+        },
+        {
+          "zMm": -20,
+          "radiusMm": 15,
+          "toleranceMm": 1e-06
+        },
+        {
+          "zMm": -15,
+          "radiusMm": 12.5,
+          "toleranceMm": 1e-06
+        },
+        {
+          "zMm": -10,
+          "radiusMm": 10,
+          "toleranceMm": 1e-06
+        },
+        {
+          "zMm": -5,
+          "radiusMm": 10,
+          "toleranceMm": 1e-06
+        },
+        {
+          "zMm": 0,
+          "radiusMm": 10,
+          "toleranceMm": 1e-06
+        }
+      ],
+      "volumeMm3": 142942.4657383356,
+      "volumeToleranceMm3": 1e-06
+    },
+    "blockCount": 12,
+    "setup": {
+      "xConvention": "diameter",
+      "initialPosition": {
+        "rMm": 30,
+        "zMm": 5
+      },
+      "stock": {
+        "diameterMm": 50,
+        "lengthMm": 100
+      },
+      "toolId": "generic-od"
+    },
+    "expectedFinalPosition": {
+      "rMm": 30,
+      "zMm": 5
+    },
+    "toleranceMm": 1e-09,
+    "expectedFinalToolId": "finishing-od"
+  }
+]

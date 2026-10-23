@@ -1,0 +1,23 @@
+{
+  "fixtureVersion": 1,
+  "description": "Geometría pura: tubo existente, mandrinado longitudinal y cilindrado exterior. No es un programa G-code.",
+  "initial": { "outerDiameterMm": 50, "innerDiameterMm": 20, "lengthMm": 100 },
+  "initialVolumePiMm3": 52500,
+  "cuts": [
+    {
+      "side": "inner",
+      "line": { "zStartMm": -40, "zEndMm": 0, "rStartMm": 15, "rEndMm": 15 },
+      "remainingVolumePiMm3": 47500
+    },
+    {
+      "side": "outer",
+      "line": { "zStartMm": -20, "zEndMm": 0, "rStartMm": 20, "rEndMm": 20 },
+      "remainingVolumePiMm3": 43000
+    }
+  ],
+  "expectedSpans": [
+    { "zStartMm": -100, "zEndMm": -40, "innerStartMm": 10, "innerEndMm": 10, "outerStartMm": 25, "outerEndMm": 25 },
+    { "zStartMm": -40, "zEndMm": -20, "innerStartMm": 15, "innerEndMm": 15, "outerStartMm": 25, "outerEndMm": 25 },
+    { "zStartMm": -20, "zEndMm": 0, "innerStartMm": 15, "innerEndMm": 15, "outerStartMm": 20, "outerEndMm": 20 }
+  ]
+}
