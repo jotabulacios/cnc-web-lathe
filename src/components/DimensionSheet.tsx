@@ -194,7 +194,9 @@ export const DimensionSheetDrawing = forwardRef<SVGSVGElement, SheetProps>(funct
   </svg>;
 });
 
-const fine = (value: number) => value !== 0 && Math.abs(value) < 1e-4 ? value.toExponential(1) : value.toLocaleString('es-AR', { maximumFractionDigits: 6, useGrouping: false });
+// Values under 0.1 µm read as "< 0,0001" instead of exponent notation.
+const fine = (value: number) =>
+  value !== 0 && Math.abs(value) < 1e-4 ? '< 0,0001' : value.toLocaleString('es-AR', { maximumFractionDigits: 6, useGrouping: false });
 function checkLabel(check: ReferenceCheck): string {
   if (check.kind === 'volume') return 'Volumen restante (mm³)';
   const z = formatMm(check.zMm!).replace('-', '−');
