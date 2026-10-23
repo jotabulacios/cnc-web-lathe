@@ -13,3 +13,4 @@ playwright-report/
 docs/evidence/
 docs/visual-review-*/*.png
 FIRST_PROMPT.md
+.claude/worktrees/
