@@ -62,12 +62,13 @@ input[aria-invalid=true] { border-color: var(--error); background: var(--error-s
 .interpret-button kbd { font-size: 12px; opacity: .7; }
 
 /* ---------- Stage (viewer) ---------- */
-.stage { grid-area: stage; display: flex; flex-direction: column; min-height: 0; overflow: hidden; }
+.stage { grid-area: stage; display: flex; flex-direction: column; min-height: 0; overflow: hidden; container: stage / inline-size; }
 .stage-toolbar { display: flex; align-items: center; gap: 10px; padding: 8px 10px; border-bottom: 1px solid var(--border); flex-wrap: wrap; }
 .segmented { display: inline-flex; }
 .segmented button { border-radius: 0; min-height: 32px; padding: 5px 12px; }
 .segmented button:first-child { border-radius: 6px 0 0 6px; }
-.segmented button:last-child { border-radius: 0 6px 6px 0; border-left: 0; }
+.segmented button:last-child { border-radius: 0 6px 6px 0; }
+.segmented button + button { border-left: 0; }
 .segmented button[aria-pressed=true] { background: var(--primary); border-color: var(--primary); color: #fff; }
 .path-toggle { min-height: 32px; padding: 5px 10px; }
 .path-toggle span { color: var(--ok); padding-right: 3px; }
@@ -88,6 +89,15 @@ input[aria-invalid=true] { border-color: var(--error); background: var(--error-s
 .profile-error button { margin-top: 6px; }
 button.diagnostic-link { background: transparent; border: 0; padding: 2px 0; min-height: 26px; text-align: left; font: 600 13px var(--mono); color: inherit; text-decoration: underline; text-underline-offset: 3px; }
 button.diagnostic-link:hover { background: transparent; }
+
+/* Split view: 2D plane and 3D part side by side; stacked when the viewer is narrow. */
+.stage-view.is-split { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 1px; background: var(--border); }
+.stage-view.is-split > * { min-width: 0; background: #f8fafc; }
+.stage-view.is-split .three-view { background: var(--panel); }
+@container stage (max-width: 640px) {
+  .stage-view.is-split { grid-template-columns: minmax(0, 1fr); }
+  .stage-view.is-split .lathe-viewport-svg { flex: none; height: auto !important; }
+}
 
 /* 3D viewer */
 .three-view { position: relative; flex: 1; min-height: 0; display: flex; flex-direction: column; background: var(--panel); }
@@ -303,6 +313,9 @@ button.diagnostic-link:hover { background: transparent; }
   .stage-view { min-height: 0; }
   .lathe-viewport-svg { flex: none; min-height: 0; height: auto !important; }
   .side-panel { min-height: 70vh; }
+}
+@media (max-width: 900px) {
+  .stage-view.is-split { grid-template-columns: minmax(0, 1fr); }
 }
 @media (max-width: 640px) {
   .lathe-app { padding: 8px; gap: 8px; }

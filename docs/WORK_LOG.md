@@ -185,3 +185,9 @@ La geometría dimensional educativa está integrada; el kernel de referencias es
 - Pruebas actualizadas: exercises.rs (oráculos analíticos), profile_v2.rs (prefijos del cono nuevo; v1 se detiene en el bloque 15 con UNSUPPORTED_PROFILE_CUT), exercises/wasm TS y E2E de cono y operaciones guiadas.
 - Checks: fmt/Clippy; 173 Rust; 164 TS; 28 WASM; 85 E2E en raíz y 85 bajo /cnc-edu/. Capturas en evidence/practices-shop-2026-10-22/.
 - Pendiente propuesto: aviso de ángulo de trabajo (corte fuera del espacio libre del inserto), primer paso hacia los chequeos de colisión.
+
+## Vista dividida 2D + 3D
+
+- El selector suma «Dividida». Muestra plano 2D y pieza 3D sincronizados, lado a lado o apilados (≤ 900 px de ventana o ≤ 640 px de visor). Detalle en SPLIT_VIEW.md.
+- Ranuras fijas en `.stage-view`: de 3D a Dividida no se recrea el contexto WebGL y se conservan la cámara, la proyección y la sección. El redimensionado usa el `ResizeObserver` existente.
+- No se persiste el modo de vista. Rust y WASM sin cambios.

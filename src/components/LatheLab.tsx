@@ -56,7 +56,8 @@ export default function LatheLab({ initialSource, exercises }: { initialSource: 
   const [draft, setDraft] = useState(() => draftFromSetup(defaultSetup));
   const [tab, setTab] = useState<TabId>('programa');
   const [showToolpath, setShowToolpath] = useState(true);
-  const [viewMode, setViewMode] = useState<'2d' | '3d'>('2d');
+  // Presentation only (not persisted). 'split' shows the 2D plane and the 3D part together.
+  const [viewMode, setViewMode] = useState<'2d' | '3d' | 'split'>('2d');
   // Presentation only; survives 2D/3D switches, never saved nor part of execution.
   const [section3d, setSection3d] = useState(false);
   const [projection, setProjection] = useState<'perspective' | 'orthographic'>('perspective');
@@ -239,13 +240,14 @@ export default function LatheLab({ initialSource, exercises }: { initialSource: 
     <section className="stage panel" id="laboratorio" aria-labelledby="viewport-title">
       <div className="stage-toolbar">
         <h2 id="viewport-title" className="visually-hidden">Vista del torno</h2>
-        <div className="view-selector segmented" role="group" aria-label="Tipo de vista"><button aria-pressed={viewMode === '2d'} onClick={() => setViewMode('2d')}>Vista 2D</button><button aria-pressed={viewMode === '3d'} onClick={() => setViewMode('3d')}>Pieza 3D</button></div>
-        {viewMode === '2d' && <button className="path-toggle" aria-pressed={showToolpath} onClick={() => setShowToolpath(!showToolpath)}><span aria-hidden="true">{showToolpath ? '◉' : '○'}</span> Trayectoria</button>}
+        <div className="view-selector segmented" role="group" aria-label="Tipo de vista"><button aria-pressed={viewMode === '2d'} onClick={() => setViewMode('2d')}>Vista 2D</button><button aria-pressed={viewMode === '3d'} onClick={() => setViewMode('3d')}>Pieza 3D</button><button aria-pressed={viewMode === 'split'} onClick={() => setViewMode('split')} title="Plano 2D y pieza 3D a la vez, sincronizados">Dividida</button></div>
+        {viewMode !== '3d' && <button className="path-toggle" aria-pressed={showToolpath} onClick={() => setShowToolpath(!showToolpath)}><span aria-hidden="true">{showToolpath ? '◉' : '○'}</span> Trayectoria</button>}
         <div className="setup-summary"><span>Ø{format(setup.stock.diameterMm)} × {format(setup.stock.lengthMm)} mm{(setup.stock.innerDiameterMm ?? 0) > 0 && <> · interior Ø{format(setup.stock.innerDiameterMm!)}</>}</span><b data-testid="setup-tool-label">T{activeTool.station} · {activeTool.name}</b></div>
       </div>
-      <div className="stage-view">
-        {viewMode === '2d' ? <LatheViewport motions={result?.motions ?? []} cursor={cursor} position={tipPosition} stock={setup.stock} showToolpath={showToolpath} profile={geometry?.spans.length ? geometry : null} toolId={activeToolId} assemblies={assemblies} animation={toolAnimation}/>
-          : <LatheThreeView stock={setup.stock} profile={geometry} position={tipPosition} toolId={activeToolId} section={section3d} onSectionChange={setSection3d} projection={projection} onProjectionChange={setProjection} assembly={assemblies[activeTool.id]} blocked={Boolean(result?.executable && (profileBusy || profileError || !geometry?.spans.length))} onReturn2D={() => setViewMode('2d')} animation={toolAnimation}/>}
+      {/* Fixed child slots: switching to/from split keeps the mounted 2D/3D instances (camera, single WebGL context). */}
+      <div className={`stage-view${viewMode === 'split' ? ' is-split' : ''}`} data-view-mode={viewMode}>
+        {viewMode !== '3d' && <LatheViewport motions={result?.motions ?? []} cursor={cursor} position={tipPosition} stock={setup.stock} showToolpath={showToolpath} profile={geometry?.spans.length ? geometry : null} toolId={activeToolId} assemblies={assemblies} animation={toolAnimation}/>}
+        {viewMode !== '2d' && <LatheThreeView stock={setup.stock} profile={geometry} position={tipPosition} toolId={activeToolId} section={section3d} onSectionChange={setSection3d} projection={projection} onProjectionChange={setProjection} assembly={assemblies[activeTool.id]} blocked={Boolean(result?.executable && (profileBusy || profileError || !geometry?.spans.length))} onReturn2D={() => setViewMode('2d')} animation={toolAnimation}/>}
       </div>
       <div className={`profile-readout ${geometry && !geometry.complete ? 'partial' : ''}`} data-profile-complete={geometry?.complete} data-profile-blocks={geometry?.evaluatedBlocks}>
         <span role="status" data-testid="profile-status">{!result?.executable ? 'Interpretá el programa para calcular el perfil.'
